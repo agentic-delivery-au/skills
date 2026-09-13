@@ -3,8 +3,7 @@ A reviewer, human or LLM, reads this before your diff.
 
 The PR title becomes the commit subject on the trunk: Conventional Commits,
 lowercase, 72 characters or fewer. The description becomes the commit body, so
-everything below is permanent. The commit and PR standard is at
-https://github.com/unicef-australia/engineering-playbook/blob/main/standards/commit-and-pr-standard.md
+everything below is permanent. AGENTS.md has the rest.
 -->
 
 ## What
