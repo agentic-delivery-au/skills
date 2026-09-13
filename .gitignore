@@ -1,0 +1,16 @@
+# OS / editor cruft
+.DS_Store
+*.swp
+
+# Local secrets
+.env
+
+# Local git worktrees
+.worktrees/
+
+# Claude Code agent worktrees and local state
+.claude/worktrees/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
