@@ -6,9 +6,9 @@ Report privately through this repository's **Security** tab, under **Report a vu
 opens a draft advisory only the maintainers can see, and it keeps the report attached to the repo it
 concerns.
 
-If private reporting has not been enabled on this repository, email the security contact instead:
-`SECURITY_CONTACT` — *replace this placeholder with a real address when creating a repo from the
-template.*
+That route depends on private vulnerability reporting being enabled on the repository: the **Report
+a vulnerability** button appears on the Security tab once it is. If the button is missing, open a
+public issue asking for it to be turned on, and say nothing there about the vulnerability itself.
 
 Do not open a public issue or pull request for a vulnerability, and do not post one in a public
 discussion. A public report tells everyone about the hole at the same moment it tells us.
