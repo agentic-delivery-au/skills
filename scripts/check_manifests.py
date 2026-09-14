@@ -58,7 +58,11 @@ def check(marketplace: object, load_plugin) -> list[str]:
         return problems + ["marketplace has no plugins list"]
 
     # A bare name is resolved against this, so the two have to be read together.
-    root = (marketplace.get("metadata") or {}).get("pluginRoot")
+    metadata = marketplace.get("metadata")
+    if metadata is not None and not isinstance(metadata, dict):
+        problems.append("marketplace metadata is not an object")
+        metadata = None
+    root = (metadata or {}).get("pluginRoot")
     seen: set[str] = set()
 
     for index, entry in enumerate(plugins):
@@ -78,9 +82,12 @@ def check(marketplace: object, load_plugin) -> list[str]:
         if source is None:
             problems.append(f"{label} has no source")
             continue
-        if not isinstance(source, str):
+        if isinstance(source, dict):
             # An object source is fetched from elsewhere by the consumer, so
             # there is nothing on disk here to resolve.
+            continue
+        if not isinstance(source, str):
+            problems.append(f'{label}: source "{source}" is neither a path nor an object')
             continue
         if ".." in pathlib.PurePosixPath(source).parts:
             problems.append(f'{label}: source "{source}" contains "..", which the format forbids')
@@ -105,6 +112,9 @@ def check(marketplace: object, load_plugin) -> list[str]:
             problems.append(f"{label}: {path} has an unreadable plugin.json: {err}")
             continue
 
+        if not isinstance(plugin, dict):
+            problems.append(f"{label}: {path}'s plugin.json does not hold an object")
+            continue
         if plugin.get("name") != name:
             problems.append(
                 f'{label}: plugin.json calls it "{plugin.get("name")}", '

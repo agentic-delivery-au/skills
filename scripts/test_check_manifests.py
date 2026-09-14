@@ -167,6 +167,26 @@ class CheckTests(unittest.TestCase):
         self.assertTrue(cm.check(marketplace(plugins=[None]), loader(GOOD)))
         self.assertTrue(cm.check(marketplace(owner="nope"), loader(GOOD)))
 
+    def test_metadata_that_is_not_an_object_is_reported(self):
+        mp = marketplace(metadata="bad")
+        problems = cm.check(mp, loader(GOOD))
+        self.assertTrue(any("metadata is not an object" in p for p in problems))
+
+    def test_a_source_that_is_neither_path_nor_object_is_reported(self):
+        for source in (123, ["./plugins/ad-general"], True):
+            with self.subTest(source=source):
+                mp = marketplace(plugins=[{"name": "ad-general", "source": source}])
+                problems = cm.check(mp, loader(GOOD))
+                self.assertTrue(any("neither a path nor an object" in p for p in problems))
+
+    def test_a_plugin_manifest_that_is_not_an_object_is_reported(self):
+        for manifest in ([], None, "text", 7):
+            with self.subTest(manifest=manifest):
+                problems = cm.check(
+                    marketplace(), loader({"./plugins/ad-general": manifest})
+                )
+                self.assertTrue(any("does not hold an object" in p for p in problems))
+
     def test_a_missing_source_is_reported(self):
         mp = marketplace(plugins=[{"name": "ad-general"}])
         problems = cm.check(mp, loader(GOOD))
