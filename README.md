@@ -127,9 +127,10 @@ applies and leave the rest. Working from your own copy of the template rather th
 the remote at that copy.
 
 The pathspec leaves out what is per-repo by design, so the diff stays worth reading: `README.md`,
-`LICENSE`, `SECURITY.md`, the release config and `version.txt` are simply not listed, and
-`.github/CODEOWNERS` and `.github/dependabot.yml` are excluded from `.github` explicitly. The
-template's version of each holds a placeholder or a language choice, never something to adopt.
+`LICENSE`, `SECURITY.md` and the release config are simply not listed, and `.github/CODEOWNERS` and
+`.github/dependabot.yml` are excluded from `.github` explicitly. The template's version of each
+holds a placeholder or a language choice, never something to adopt — and where this repo has dropped
+the file outright, as it has for `CODEOWNERS` and `version.txt`, a refresh should not offer it back.
 
 A hook rev that is newer downstream is not drift. `pre-commit autoupdate` is how it is meant to be
 bumped; a repo that is ahead should stay ahead, and the template should catch up.
