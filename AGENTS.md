@@ -16,8 +16,8 @@ All commits go through [pre-commit](https://pre-commit.com). Config: `.pre-commi
 - Other hooks: trailing-whitespace (markdown hard breaks preserved), end-of-file-fixer, check-yaml,
   check-merge-conflict, check-added-large-files, mixed-line-ending (LF), actionlint (workflow
   expressions, runner labels, and shellcheck over `run:` scripts), shellcheck over tracked `.sh`
-  files, the `bootstrap_repo` unit tests, betterleaks secret scanning (`.betterleaks.toml` holds
-  what the repo treats as benign).
+  files, the unit tests under `scripts/`, the marketplace and plugin manifest checks, betterleaks
+  secret scanning (`.betterleaks.toml` holds what the repo treats as benign).
 - Run against everything with `pre-commit run --all-files`; bump hook versions with
   `pre-commit autoupdate`. CI re-runs the full hook suite on every PR.
 

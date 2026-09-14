@@ -68,15 +68,28 @@ repos:
 
   - repo: local
     hooks:
-      # The --apply path writes real repository settings, so a fake gh is the
-      # only place it gets exercised. Runs on any scripts/ change, not just the
-      # test file, since the script is what the assertions are about.
-      - id: bootstrap-repo-tests
-        name: bootstrap_repo tests
+      # Every unittest under scripts/. The bootstrap script's --apply path
+      # writes real repository settings, so a fake gh is the only place it gets
+      # exercised. Runs on any scripts/ change, not just the test files, since
+      # the scripts are what the assertions are about.
+      - id: script-tests
+        name: scripts tests
         entry: python3 -m unittest discover -s scripts -t scripts
         language: system
         pass_filenames: false
         files: ^scripts/.*\.py$
+
+  - repo: local
+    hooks:
+      # always_run because the case worth catching is a deleted plugin
+      # directory, and pre-commit does not pass deletions to a files: filter --
+      # the hook would stay silent in exactly that scenario.
+      - id: check-manifests
+        name: marketplace and plugins agree
+        entry: python3 scripts/check_manifests.py
+        language: system
+        pass_filenames: false
+        always_run: true
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1-1
