@@ -13,6 +13,9 @@ repos:
       - id: check-yaml
       - id: check-merge-conflict
       - id: check-added-large-files
+      # Two files differing only in case break a clone on Windows and macOS,
+      # and every skill directory here is named by hand.
+      - id: check-case-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
 
@@ -111,9 +114,9 @@ repos:
         pass_filenames: false
         always_run: true
 
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1-1
+  # Keeps this file honest: a hook matching nothing, or an exclude excluding
+  # nothing, is a guardrail everyone believes in and nobody runs.
+  - repo: meta
     hooks:
-      # shellcheck-py ships the binary as a wheel, so this needs no system
-      # shellcheck -- the CI job installs only Python.
-      - id: shellcheck
+      - id: check-hooks-apply
+      - id: check-useless-excludes
