@@ -95,26 +95,14 @@ the App token does all the work.
 on `main` and keeps an open release PR that bumps the version and updates `CHANGELOG.md`. Merging
 that PR tags the version and publishes the GitHub release.
 
-The release type here is `simple`, which tracks the version in a plain `version.txt` and assumes no
-package manifest — deliberately language-agnostic, so this template stays language-agnostic. **A
-repo created from this template has to change it**, in the `packages` block of
-`release-please-config.json`:
+The version that matters is the one a marketplace consumer reads, `version` in the plugin's
+`.claude-plugin/plugin.json`. `release-please-config.json` points at it with `extra-files` and a
+jsonpath, so a release bumps that field. There is no `version.txt` here: nothing read it.
 
-- **Node** — `"release-type": "node"`, which bumps `package.json` (and the lockfile) instead of
-  `version.txt`.
-- **Python** — `"release-type": "python"`, which bumps `pyproject.toml`, `setup.py`/`setup.cfg`, and
-  a `__init__.py` version where present.
-- **Monorepo** — one entry per package under `packages`, each with its own path and release type,
-  plus `"separate-pull-requests": true` for a release PR per package, or a
-  [linked-versions](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#linked-versions)
-  plugin to release them together.
-
-Every release type but `simple` bumps a file of its own, so delete `version.txt` at the same time or
-it sits there frozen at whatever version it stopped being updated on.
-
-The
+A second plugin makes this repo a monorepo, and one shared version across independently useful
+plugins stops being honest at that point. The
 [manifest releaser docs](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
-cover the full set of options, including `extra-files` for versions embedded elsewhere.
+cover a package entry per plugin, and `"separate-pull-requests": true` for a release PR each.
 
 ## Keeping up with the template
 
@@ -139,9 +127,10 @@ applies and leave the rest. Working from your own copy of the template rather th
 the remote at that copy.
 
 The pathspec leaves out what is per-repo by design, so the diff stays worth reading: `README.md`,
-`LICENSE`, `SECURITY.md`, the release config and `version.txt` are simply not listed, and
-`.github/CODEOWNERS` and `.github/dependabot.yml` are excluded from `.github` explicitly. The
-template's version of each holds a placeholder or a language choice, never something to adopt.
+`LICENSE`, `SECURITY.md` and the release config are simply not listed, and `.github/CODEOWNERS` and
+`.github/dependabot.yml` are excluded from `.github` explicitly. The template's version of each
+holds a placeholder or a language choice, never something to adopt — and where this repo has dropped
+the file outright, as it has for `CODEOWNERS` and `version.txt`, a refresh should not offer it back.
 
 A hook rev that is newer downstream is not drift. `pre-commit autoupdate` is how it is meant to be
 bumped; a repo that is ahead should stay ahead, and the template should catch up.
