@@ -1,0 +1,9 @@
+{
+  "name": "ad-vendor",
+  "description": "Skills written elsewhere, vendored here with their own licences and provenance.",
+  "version": "0.0.0",
+  "author": {
+    "name": "Agentic Delivery",
+    "email": "hello@agenticdelivery.com.au"
+  }
+}

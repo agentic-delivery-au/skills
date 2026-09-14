@@ -24,6 +24,9 @@ picks up skills added since.
   `writing-comments`.
 - **`ad-product`** — defining what to build and why. Holds `writing-prds`, which brings its own PRD
   template.
+- **`ad-vendor`** — skills written elsewhere, copied in rather than linked because upstream is not
+  installable as a plugin. Holds `stop-slop`. Each one keeps its licence and the commit it was taken
+  at under `vendor/`, and the files themselves are left exactly as upstream wrote them.
 
 A skill is a `SKILL.md` under a plugin's `skills/`. The `description` in its front matter is what
 decides when an agent reaches for it, so it is written for the moment it should fire rather than as
