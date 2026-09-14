@@ -21,7 +21,7 @@ picks up skills added since.
 ## The plugins
 
 - **`ad-general`** — engineering practices that apply to any codebase, whatever the language. Holds
-  `writing-comments`.
+  `writing-comments` and `writing-pull-requests`.
 - **`ad-product`** — defining what to build and why. Holds `writing-prds`, which brings its own PRD
   template.
 - **`ad-vendor`** — skills written elsewhere, copied in rather than linked because upstream is not
