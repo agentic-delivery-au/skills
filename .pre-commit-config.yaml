@@ -26,7 +26,9 @@ repos:
         additional_dependencies:
           - mdformat-gfm
           - mdformat-footnote
-          - mdformat-frontmatter  # leave YAML front matter (skill SKILL.md, etc.) untouched
+          # Without it the --- fences parse as Markdown and a skill loses its name
+          # and description. It rewrites the front matter rather than preserving it.
+          - mdformat-frontmatter
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.49.1
