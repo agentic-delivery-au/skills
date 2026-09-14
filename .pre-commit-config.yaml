@@ -95,10 +95,13 @@ repos:
       # writes real repository settings, so a fake gh is the only place it gets
       # exercised. Runs on any scripts/ change, not just the test files, since
       # the scripts are what the assertions are about.
+      # language: python because a script under test imports pyyaml, and a
+      # system interpreter has it only as pre-commit's own dependency.
       - id: script-tests
         name: scripts tests
-        entry: python3 -m unittest discover -s scripts -t scripts
-        language: system
+        entry: python -m unittest discover -s scripts -t scripts
+        language: python
+        additional_dependencies: ["pyyaml==6.0.3"]
         pass_filenames: false
         files: ^scripts/.*\.py$
 
@@ -111,6 +114,18 @@ repos:
         name: marketplace and plugins agree
         entry: python3 scripts/check_manifests.py
         language: system
+        pass_filenames: false
+        always_run: true
+
+      # skill-validator covers one plugin per entry, so a plugin added without
+      # one is never validated and every hook still passes -- which is how
+      # ad-product went unvalidated until someone noticed by hand. always_run
+      # for the same reason as above: a deleted plugin reaches no files: filter.
+      - id: check-validator-coverage
+        name: every plugin's skills are validated
+        entry: python scripts/check_validator_coverage.py
+        language: python
+        additional_dependencies: ["pyyaml==6.0.3"]
         pass_filenames: false
         always_run: true
 
