@@ -48,14 +48,7 @@ No summary or report documents. The PR description is the record.
 
 Flag scope growth before writing the code, not after.
 
-The commit and PR standard linked below covers PR length (§2.2, §3.3) and size (§3.4); prose is
-exempt from its line budget.
-
 ## Commits and pull requests
-
-The full standard is
-[`commit-and-pr-standard.md`](https://github.com/unicef-australia/engineering-playbook/blob/main/standards/commit-and-pr-standard.md).
-What comes up most often:
 
 Conventional Commits, subject line 72 characters or fewer, lowercase, no trailing period. The scope
 is the affected area of the repo — for example `feat(pre-commit): add hook for X`. The commitizen
@@ -66,9 +59,8 @@ description becomes the commit body, so both are permanent. Write them for someo
 in a year. The `Lint PR` workflow checks the title; for a single-commit PR the title must match that
 commit.
 
-One branch per PR, cut from `main`, named with the agent prefix the playbook sets out — `claude/…`,
-or `ai/…` for an agent without a prefix of its own (life of a pull request §2). Concurrent agents
-get a worktree each.
+One branch per PR, cut from `main`, prefixed with the agent's own name — `claude/…`, or `ai/…` for
+an agent without a prefix of its own. Concurrent agents get a worktree each.
 
 Do not push to `main`, force-push a shared branch, or merge your own PR. The merge is the one point
 where a person reads the change before it lands.
