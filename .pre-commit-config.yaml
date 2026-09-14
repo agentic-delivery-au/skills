@@ -13,6 +13,9 @@ repos:
       - id: check-yaml
       - id: check-merge-conflict
       - id: check-added-large-files
+      # Two files differing only in case break a clone on Windows and macOS,
+      # and every skill directory here is named by hand.
+      - id: check-case-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
 
@@ -27,7 +30,9 @@ repos:
         additional_dependencies:
           - mdformat-gfm
           - mdformat-footnote
-          - mdformat-frontmatter  # leave YAML front matter (skill SKILL.md, etc.) untouched
+          # Without it the --- fences parse as Markdown and a skill loses its name
+          # and description. It rewrites the front matter rather than preserving it.
+          - mdformat-frontmatter
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.49.1
@@ -90,10 +95,13 @@ repos:
       # writes real repository settings, so a fake gh is the only place it gets
       # exercised. Runs on any scripts/ change, not just the test files, since
       # the scripts are what the assertions are about.
+      # language: python because a script under test imports pyyaml, and a
+      # system interpreter has it only as pre-commit's own dependency.
       - id: script-tests
         name: scripts tests
-        entry: python3 -m unittest discover -s scripts -t scripts
-        language: system
+        entry: python -m unittest discover -s scripts -t scripts
+        language: python
+        additional_dependencies: ["pyyaml==6.0.3"]
         pass_filenames: false
         files: ^scripts/.*\.py$
 
@@ -109,9 +117,21 @@ repos:
         pass_filenames: false
         always_run: true
 
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1-1
+      # skill-validator covers one plugin per entry, so a plugin added without
+      # one is never validated and every hook still passes -- which is how
+      # ad-product went unvalidated until someone noticed by hand. always_run
+      # for the same reason as above: a deleted plugin reaches no files: filter.
+      - id: check-validator-coverage
+        name: every plugin's skills are validated
+        entry: python scripts/check_validator_coverage.py
+        language: python
+        additional_dependencies: ["pyyaml==6.0.3"]
+        pass_filenames: false
+        always_run: true
+
+  # Keeps this file honest: a hook matching nothing, or an exclude excluding
+  # nothing, is a guardrail everyone believes in and nobody runs.
+  - repo: meta
     hooks:
-      # shellcheck-py ships the binary as a wheel, so this needs no system
-      # shellcheck -- the CI job installs only Python.
-      - id: shellcheck
+      - id: check-hooks-apply
+      - id: check-useless-excludes

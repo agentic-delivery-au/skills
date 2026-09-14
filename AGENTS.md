@@ -14,11 +14,14 @@ All commits go through [pre-commit](https://pre-commit.com). Config: `.pre-commi
 - Markdown is also linted by **markdownlint**, for semantic issues mdformat doesn't catch (heading
   structure, etc.). Settings live in `.markdownlint.jsonc`.
 - Other hooks: trailing-whitespace (markdown hard breaks preserved), end-of-file-fixer, check-yaml,
-  check-merge-conflict, check-added-large-files, mixed-line-ending (LF), actionlint (workflow
-  expressions, runner labels, and shellcheck over `run:` scripts), shellcheck over tracked `.sh`
-  files, the unit tests under `scripts/`, the marketplace and plugin manifest checks,
-  skill-validator over each plugin's skills (one entry per plugin), betterleaks secret scanning
-  (`.betterleaks.toml` holds what the repo treats as benign).
+  check-merge-conflict, check-added-large-files, check-case-conflict, mixed-line-ending (LF),
+  actionlint (workflow expressions, runner labels, and shellcheck over `run:` scripts), the unit
+  tests under `scripts/`, the marketplace and plugin manifest checks, skill-validator over each
+  plugin's skills (one entry per plugin, and a check that no plugin is missing one), betterleaks
+  secret scanning (`.betterleaks.toml` holds what the repo treats as benign).
+- The `meta` hooks check `.pre-commit-config.yaml` against the repo: `check-hooks-apply` fails a
+  hook that matches nothing, `check-useless-excludes` an exclude that excludes nothing. Both are how
+  a guardrail everyone believes in stops quietly running.
 - Run against everything with `pre-commit run --all-files`; bump hook versions with
   `pre-commit autoupdate`. CI re-runs the full hook suite on every PR.
 
