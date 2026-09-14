@@ -47,6 +47,10 @@ repos:
         name: validate ad-general skills
         args: [check, "plugins/ad-general/skills/"]
         language_version: "1.27.0"
+      - id: skill-validator
+        name: validate ad-product skills
+        args: [check, "plugins/ad-product/skills/"]
+        language_version: "1.27.0"
 
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.12
