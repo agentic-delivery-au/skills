@@ -5,8 +5,8 @@ description: Use when about to write or revise a pull request description, when 
 
 # Writing Pull Requests
 
-This governs the **description** — the body of a pull request. The title is a commit subject and a
-different artefact with different rules.
+This governs the **description** — the body of a pull request. The title is a different artefact
+with different rules, and under squash merge it is also the commit subject.
 
 ## The one rule
 
@@ -41,11 +41,15 @@ click away. A description that walks through them adds a second, staler copy.
 
 ## The test
 
-For each paragraph: **would a reviewer who has read the issue and the diff learn anything from
-this?**
+For each paragraph, heading and bullet: **would a reviewer who has read the issue and the diff learn
+anything from this?**
 
 If no, cut it. This catches the two failures above, and it catches process narration — the urge to
 explain comes from having just done the work, and the reader has not.
+
+It also catches the shapes that make a short description look long: a heading standing over one
+sentence, a bullet list whose items are not a list, and a paragraph answering an objection nobody
+has made. Each is formatting doing the work that substance should.
 
 ## What earns space
 
@@ -56,8 +60,9 @@ explain comes from having just done the work, and the reader has not.
 - **A consequence outside the diff.** A setting to change, an ordering against another PR, something
   that must happen before or after merge.
 
-Nothing else. A change where none of these apply needs no description — the title and the diff have
-already said it.
+Nothing else. A change where none of these apply needs no prose — the title and the diff have
+already said it. What a repository requires is not prose and still applies: an issue reference, the
+fields of a pull request template, a trailer. Leave those; drop the paragraphs around them.
 
 ## Evidence, not process
 
