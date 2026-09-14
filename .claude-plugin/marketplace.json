@@ -1,0 +1,15 @@
+{
+  "name": "agentic-delivery",
+  "owner": {
+    "name": "Agentic Delivery",
+    "email": "hello@agenticdelivery.com.au"
+  },
+  "description": "Skills for AI-assisted software development, grouped by what you are working on.",
+  "plugins": [
+    {
+      "name": "ad-general",
+      "source": "./plugins/ad-general",
+      "description": "Engineering practices that apply to any codebase, whatever the language."
+    }
+  ]
+}

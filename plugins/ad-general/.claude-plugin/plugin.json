@@ -1,0 +1,9 @@
+{
+  "name": "ad-general",
+  "description": "Engineering practices that apply to any codebase, whatever the language.",
+  "version": "0.0.0",
+  "author": {
+    "name": "Agentic Delivery",
+    "email": "hello@agenticdelivery.com.au"
+  }
+}
