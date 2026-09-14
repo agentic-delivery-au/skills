@@ -1,33 +1,51 @@
-# base-template
+# Agentic Delivery skills
 
-The base template every new repository is created from (GitHub's "Use this template"). It sets up
-the tooling and conventions that apply regardless of language:
+A Claude Code plugin marketplace: the development skills Agentic Delivery uses across client work,
+collected so the same standards travel between repositories instead of being re-explained in each
+one. Skills are grouped into plugins by what you are working on, and installed a plugin at a time.
 
-- **pre-commit** — hook config in `.pre-commit-config.yaml`, run in CI on every PR.
-- **Markdown formatting** — [mdformat](https://mdformat.readthedocs.io), configured in
-  `.mdformat.toml`.
-- **Markdown linting** — [markdownlint](https://github.com/igorshubovych/markdownlint-cli),
-  configured in `.markdownlint.jsonc`.
-- **Conventional Commits** — enforced by commitizen via the `commit-msg` hook.
-- **Secret scanning** — [betterleaks](https://github.com/betterleaks/betterleaks), configured in
-  `.betterleaks.toml`.
-- **Consistent line endings** — `.gitattributes` normalizes text files to LF on checkout.
-- **Editor defaults** — [.editorconfig](https://editorconfig.org) gives editors the same whitespace
-  rules the hooks enforce, so files arrive conforming.
-- **PR conventions** — a PR template and a title-lint workflow, both under `.github/`.
-- **Releases** — [release-please](https://github.com/googleapis/release-please), configured in
-  `release-please-config.json` and `.release-please-manifest.json`. See [Releases](#releases) for
-  what a new repo has to change.
-- **License** — [MIT](LICENSE). Covers this repository's own content; a vendored third-party skill
-  keeps the licence it came with.
-- **`AGENTS.md`** — the starting rules for an AI agent working in a new repo, read by any agent that
-  supports the convention. `CLAUDE.md` is a one-line pointer to it, kept only so Claude Code finds
-  it.
+MIT ([LICENSE](LICENSE)), covering this repository's own content.
 
-Language-specific templates (Python, React, ...) are created from this one and add their own
-language tooling on top; they should not need to redo anything listed above.
+## Install
 
-## Setup
+```bash
+claude plugin marketplace add agentic-delivery-au/skills
+claude plugin install ad-general@agentic-delivery
+```
+
+Inside a session the same thing is `/plugin marketplace add agentic-delivery-au/skills`. A plugin is
+named `<plugin>@agentic-delivery` wherever a name is asked for — installing, enabling, or
+`enabledPlugins` in `.claude/settings.json`. `claude plugin marketplace update agentic-delivery`
+picks up skills added since.
+
+## The plugins
+
+- **`ad-general`** — engineering practices that apply to any codebase, whatever the language. Holds
+  `writing-comments`.
+- **`ad-product`** — defining what to build and why. Holds `writing-prds`, which brings its own PRD
+  template.
+
+A skill is a `SKILL.md` under a plugin's `skills/`. The `description` in its front matter is what
+decides when an agent reaches for it, so it is written for the moment it should fire rather than as
+a summary of what it contains.
+
+## Adding a skill
+
+`plugins/<plugin>/skills/<skill>/SKILL.md`, with `name` matching the directory. Anything the skill
+needs to read — a template, reference notes — goes beside it under `references/`, because whoever
+installs the plugin gets that directory and nothing else, and a link climbing out of it resolves
+only here.
+
+A new plugin needs more than a directory: an entry in `.claude-plugin/marketplace.json`, its own
+`.claude-plugin/plugin.json`, a package entry in `release-please-config.json` with a matching line
+in `.release-please-manifest.json`, and its own `skill-validator` entry in `.pre-commit-config.yaml`
+— that validator looks one level deep, so one entry per plugin. The hooks catch most of these. Keep
+the plugin list above honest while you are here.
+
+`AGENTS.md` has the rules the hooks enforce, and the hooks themselves are in
+`.pre-commit-config.yaml`.
+
+## Working in this repo
 
 ```bash
 pre-commit install   # one-time, sets up the pre-commit and commit-msg hooks
@@ -39,10 +57,10 @@ pre-commit install   # one-time, sets up the pre-commit and commit-msg hooks
 
 ### Repository settings
 
-"Use this template" copies files and nothing else, so a new repo starts with no branch protection,
-merge settings at GitHub's defaults, and the Actions permission release-please needs to open its
-release PR switched off. `scripts/bootstrap_repo.py` applies them. It prints a plan and changes
-nothing until you pass `--apply`.
+Already applied here, and recorded because settings are the part a clone does not carry. "Use this
+template" copies files and nothing else, so this repo started with no branch protection and merge
+settings at GitHub's defaults. `scripts/bootstrap_repo.py` applies them, and re-running it reports
+what has since drifted. It prints a plan and changes nothing until you pass `--apply`.
 
 Read the plan before applying it. An existing ruleset is replaced wholesale, so the plan diffs the
 repo's policy against the template's: a `-` line is policy this repo has and the template does not,
@@ -62,9 +80,10 @@ python3 scripts/bootstrap_repo.py --apply    # change it
 request opened with `GITHUB_TOKEN` triggers no workflows: the checks the ruleset requires would
 never report on the release PR, and it could never merge.
 
-**Do this before merging anything that runs the workflow.** There is deliberately no fallback to
-`GITHUB_TOKEN` — a silent downgrade would reintroduce the unmergeable release PR — so until the App
-exists and both credentials are set, every push to `main` fails at the token step.
+The App is installed and its credentials are set at the organisation, so this repo releases. The
+steps below are what a repo without it needs, and there is deliberately no fallback to
+`GITHUB_TOKEN` — a silent downgrade would reintroduce the unmergeable release PR — so a repo missing
+either credential fails at the token step on every push to `main`.
 
 1. Create the App under the organisation: Settings → Developer settings → GitHub Apps → New. It
    needs no webhook and no callback URL.
