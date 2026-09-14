@@ -8,6 +8,11 @@
           "type": "json",
           "path": "plugins/ad-general/.claude-plugin/plugin.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "plugins/ad-product/.claude-plugin/plugin.json",
+          "jsonpath": "$.version"
         }
       ]
     }
