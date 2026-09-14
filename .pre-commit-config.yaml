@@ -79,37 +79,17 @@ repos:
         pass_filenames: false
         files: ^scripts/.*\.py$
 
-  # Structure only: required keys, types, valid JSON. Schemas are fetched from
-  # SchemaStore, which tracks the manifest format upstream -- a vendored copy
-  # would go stale silently, which is the worse failure for a check like this.
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.38.0
-    hooks:
-      - id: check-jsonschema
-        name: validate marketplace.json
-        files: ^\.claude-plugin/marketplace\.json$
-        args:
-          - --schemafile
-          - https://www.schemastore.org/claude-code-marketplace.json
-      - id: check-jsonschema
-        name: validate plugin.json
-        files: ^plugins/[^/]+/\.claude-plugin/plugin\.json$
-        args:
-          - --schemafile
-          - https://www.schemastore.org/claude-code-plugin-manifest.json
-
   - repo: local
     hooks:
-      # What a schema cannot say: that a plugin's source resolves, that both
-      # manifests agree on its name, and that a name survives the claude.ai
-      # sync. A dangling source is the one that matters -- it is how a plugin
-      # silently stops existing while every file still parses.
+      # always_run because the case worth catching is a deleted plugin
+      # directory, and pre-commit does not pass deletions to a files: filter --
+      # the hook would stay silent in exactly that scenario.
       - id: check-manifests
         name: marketplace and plugins agree
         entry: python3 scripts/check_manifests.py
         language: system
         pass_filenames: false
-        files: ^(\.claude-plugin/|plugins/)
+        always_run: true
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1-1

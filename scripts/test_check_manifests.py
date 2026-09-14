@@ -59,8 +59,6 @@ class CheckTests(unittest.TestCase):
         self.assertIn("not a directory", problems[0])
 
     def test_directory_without_a_manifest_is_reported(self):
-        load = loader({})
-
         def missing_manifest(source):
             raise FileNotFoundError(f"{source} has no .claude-plugin/plugin.json")
 
@@ -86,8 +84,15 @@ class CheckTests(unittest.TestCase):
         problems = cm.check(marketplace(), loader(plugins))
         self.assertIn("not semver", problems[0])
 
+    def test_leading_zeroes_and_empty_identifiers_are_not_semver(self):
+        for version in ("01.2.3", "1.2.3-01", "1.2.3-", "1.2", "v1.2.3", "1.2.3\n"):
+            plugins = {"./plugins/ad-general": {"name": "ad-general", "version": version}}
+            with self.subTest(version=version):
+                problems = cm.check(marketplace(), loader(plugins))
+                self.assertTrue(any("not semver" in p for p in problems))
+
     def test_semver_prerelease_and_build_are_accepted(self):
-        for version in ("1.2.3", "1.2.3-rc.1", "1.2.3+build.5", "0.0.0"):
+        for version in ("1.2.3", "1.2.3-rc.1", "1.2.3+build.5", "0.0.0", "1.2.3-alpha.1+b.2"):
             plugins = {"./plugins/ad-general": {"name": "ad-general", "version": version}}
             with self.subTest(version=version):
                 self.assertEqual(cm.check(marketplace(), loader(plugins)), [])
@@ -99,11 +104,73 @@ class CheckTests(unittest.TestCase):
         problems = cm.check(mp, loader(GOOD))
         self.assertTrue(any("kebab-case" in p for p in problems))
 
-    def test_reserved_names_are_reported(self):
-        for name in ("org", "Org", "org-provisioned", "unknown"):
+    def test_reserved_marketplace_names_are_reported(self):
+        for name in ("org", "org-provisioned", "unknown"):
             with self.subTest(name=name):
                 problems = cm.check(marketplace(name=name), loader(GOOD))
                 self.assertTrue(any("reserved" in p for p in problems))
+
+    def test_a_plugin_may_use_a_name_reserved_only_for_marketplaces(self):
+        # The rule is Claude Desktop's, and it applies to the marketplace name.
+        mp = marketplace(plugins=[{"name": "unknown", "source": "./plugins/unknown"}])
+        plugins = {"./plugins/unknown": {"name": "unknown", "version": "1.0.0"}}
+        self.assertEqual(cm.check(mp, loader(plugins)), [])
+
+    def test_duplicate_plugin_names_are_reported(self):
+        mp = marketplace(
+            plugins=[
+                {"name": "ad-general", "source": "./plugins/ad-general"},
+                {"name": "ad-general", "source": "./plugins/ad-general"},
+            ]
+        )
+        problems = cm.check(mp, loader(GOOD))
+        self.assertTrue(any("listed twice" in p for p in problems))
+
+    def test_parent_traversal_in_a_source_is_reported(self):
+        mp = marketplace(
+            plugins=[{"name": "ad-general", "source": "./plugins/../plugins/ad-general"}]
+        )
+        problems = cm.check(mp, loader({"./plugins/../plugins/ad-general": GOOD["./plugins/ad-general"]}))
+        self.assertTrue(any('".."' in p for p in problems))
+
+    def test_a_bare_name_resolves_through_plugin_root(self):
+        mp = marketplace(
+            metadata={"pluginRoot": "./plugins"},
+            plugins=[{"name": "ad-general", "source": "ad-general"}],
+        )
+        self.assertEqual(cm.check(mp, loader(GOOD)), [])
+
+    def test_a_bare_name_without_a_plugin_root_is_reported(self):
+        mp = marketplace(plugins=[{"name": "ad-general", "source": "ad-general"}])
+        problems = cm.check(mp, loader(GOOD))
+        self.assertTrue(any("pluginRoot" in p for p in problems))
+
+    def test_a_dangling_bare_name_is_still_resolved(self):
+        mp = marketplace(
+            metadata={"pluginRoot": "./plugins"},
+            plugins=[{"name": "ad-typo", "source": "ad-typo"}],
+        )
+        problems = cm.check(mp, loader(GOOD))
+        self.assertTrue(any("not a directory" in p for p in problems))
+
+    def test_a_trailing_newline_in_a_name_is_reported(self):
+        mp = marketplace(plugins=[{"name": "ad-general\n", "source": "./plugins/ad-general"}])
+        problems = cm.check(mp, loader(GOOD))
+        self.assertTrue(any("kebab-case" in p for p in problems))
+
+    def test_structure_problems_are_reported_not_raised(self):
+        for broken in ("not an object", ["a", "list"], 7):
+            with self.subTest(broken=broken):
+                self.assertTrue(cm.check(broken, loader(GOOD)))
+        self.assertTrue(cm.check(marketplace(plugins="nope"), loader(GOOD)))
+        self.assertTrue(cm.check(marketplace(plugins=["nope"]), loader(GOOD)))
+        self.assertTrue(cm.check(marketplace(plugins=[None]), loader(GOOD)))
+        self.assertTrue(cm.check(marketplace(owner="nope"), loader(GOOD)))
+
+    def test_a_missing_source_is_reported(self):
+        mp = marketplace(plugins=[{"name": "ad-general"}])
+        problems = cm.check(mp, loader(GOOD))
+        self.assertTrue(any("no source" in p for p in problems))
 
     def test_remote_sources_are_not_resolved_but_still_named(self):
         mp = marketplace(
@@ -149,6 +216,18 @@ class MainTests(unittest.TestCase):
                 json.dumps({"name": "ad-general", "version": "0.0.0"}), encoding="utf-8"
             )
             self.assertEqual(cm.main(tmp), 0)
+
+    def test_a_tree_with_a_problem_exits_non_zero(self):
+        # Without this, main() could return 0 unconditionally and every other
+        # test would still pass -- the wire from check() to the exit code is
+        # the only thing that makes this a hook rather than a library.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / ".claude-plugin").mkdir(parents=True)
+            (root / ".claude-plugin" / "marketplace.json").write_text(
+                json.dumps(marketplace()), encoding="utf-8"
+            )  # the plugin directory is deliberately absent
+            self.assertEqual(cm.main(tmp), 1)
 
     def test_this_repository_passes(self):
         self.assertEqual(cm.main(pathlib.Path(__file__).parent.parent), 0)
