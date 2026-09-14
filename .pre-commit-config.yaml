@@ -22,7 +22,6 @@ repos:
   - repo: https://github.com/hukkin/mdformat
     rev: 1.0.0
     hooks:
-      # Skips CHANGELOG.md through .mdformat.toml; see the note there.
       - id: mdformat
         additional_dependencies:
           - mdformat-gfm
@@ -34,8 +33,6 @@ repos:
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.49.1
     hooks:
-      # CHANGELOG.md is skipped through .markdownlintignore, which markdownlint
-      # reads from the working directory, so a run from the repo root agrees.
       - id: markdownlint
         args: ["--config", ".markdownlint.jsonc"]
 
