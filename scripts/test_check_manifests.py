@@ -44,7 +44,7 @@ def loader(plugins):
     return load
 
 
-GOOD = {"./plugins/ad-general": {"name": "ad-general", "version": "0.0.0"}}
+GOOD = {"plugins/ad-general": {"name": "ad-general", "version": "0.0.0"}}
 
 
 class CheckTests(unittest.TestCase):
@@ -66,34 +66,34 @@ class CheckTests(unittest.TestCase):
         self.assertIn("no .claude-plugin/plugin.json", problems[0])
 
     def test_unparseable_manifest_is_reported(self):
-        problems = cm.check(marketplace(), loader({"./plugins/ad-general": ValueError("bad json")}))
+        problems = cm.check(marketplace(), loader({"plugins/ad-general": ValueError("bad json")}))
         self.assertIn("unreadable plugin.json", problems[0])
 
     def test_names_disagreeing_between_manifests_is_reported(self):
-        plugins = {"./plugins/ad-general": {"name": "something-else", "version": "1.0.0"}}
+        plugins = {"plugins/ad-general": {"name": "something-else", "version": "1.0.0"}}
         problems = cm.check(marketplace(), loader(plugins))
         self.assertIn("disagree", problems[0])
 
     def test_missing_version_is_reported(self):
-        plugins = {"./plugins/ad-general": {"name": "ad-general"}}
+        plugins = {"plugins/ad-general": {"name": "ad-general"}}
         problems = cm.check(marketplace(), loader(plugins))
         self.assertIn("no version", problems[0])
 
     def test_non_semver_version_is_reported(self):
-        plugins = {"./plugins/ad-general": {"name": "ad-general", "version": "v1"}}
+        plugins = {"plugins/ad-general": {"name": "ad-general", "version": "v1"}}
         problems = cm.check(marketplace(), loader(plugins))
         self.assertIn("not semver", problems[0])
 
     def test_leading_zeroes_and_empty_identifiers_are_not_semver(self):
         for version in ("01.2.3", "1.2.3-01", "1.2.3-", "1.2", "v1.2.3", "1.2.3\n"):
-            plugins = {"./plugins/ad-general": {"name": "ad-general", "version": version}}
+            plugins = {"plugins/ad-general": {"name": "ad-general", "version": version}}
             with self.subTest(version=version):
                 problems = cm.check(marketplace(), loader(plugins))
                 self.assertTrue(any("not semver" in p for p in problems))
 
     def test_semver_prerelease_and_build_are_accepted(self):
         for version in ("1.2.3", "1.2.3-rc.1", "1.2.3+build.5", "0.0.0", "1.2.3-alpha.1+b.2"):
-            plugins = {"./plugins/ad-general": {"name": "ad-general", "version": version}}
+            plugins = {"plugins/ad-general": {"name": "ad-general", "version": version}}
             with self.subTest(version=version):
                 self.assertEqual(cm.check(marketplace(), loader(plugins)), [])
 
@@ -113,7 +113,7 @@ class CheckTests(unittest.TestCase):
     def test_a_plugin_may_use_a_name_reserved_only_for_marketplaces(self):
         # The rule is Claude Desktop's, and it applies to the marketplace name.
         mp = marketplace(plugins=[{"name": "unknown", "source": "./plugins/unknown"}])
-        plugins = {"./plugins/unknown": {"name": "unknown", "version": "1.0.0"}}
+        plugins = {"plugins/unknown": {"name": "unknown", "version": "1.0.0"}}
         self.assertEqual(cm.check(mp, loader(plugins)), [])
 
     def test_duplicate_plugin_names_are_reported(self):
@@ -130,7 +130,8 @@ class CheckTests(unittest.TestCase):
         mp = marketplace(
             plugins=[{"name": "ad-general", "source": "./plugins/../plugins/ad-general"}]
         )
-        problems = cm.check(mp, loader({"./plugins/../plugins/ad-general": GOOD["./plugins/ad-general"]}))
+        plugins = {"plugins/../plugins/ad-general": GOOD["plugins/ad-general"]}
+        problems = cm.check(mp, loader(plugins))
         self.assertTrue(any('".."' in p for p in problems))
 
     def test_a_bare_name_resolves_through_plugin_root(self):
@@ -183,7 +184,7 @@ class CheckTests(unittest.TestCase):
         for manifest in ([], None, "text", 7):
             with self.subTest(manifest=manifest):
                 problems = cm.check(
-                    marketplace(), loader({"./plugins/ad-general": manifest})
+                    marketplace(), loader({"plugins/ad-general": manifest})
                 )
                 self.assertTrue(any("does not hold an object" in p for p in problems))
 
@@ -209,6 +210,104 @@ class CheckTests(unittest.TestCase):
         )
         problems = cm.check(mp, loader(GOOD))
         self.assertTrue(any("ad-second" in p for p in problems))
+
+
+class ReleaseCoverageTests(unittest.TestCase):
+    PACKAGE = {
+        "component": "ad-general",
+        "extra-files": [
+            {"type": "json", "path": ".claude-plugin/plugin.json", "jsonpath": "$.version"}
+        ],
+    }
+    CONFIG = {"packages": {"plugins/ad-general": PACKAGE}}
+    MANIFEST = {"plugins/ad-general": "0.0.0"}
+
+    def test_a_covered_plugin_has_no_problems(self):
+        self.assertEqual(
+            cm.check_release_coverage(marketplace(), self.CONFIG, self.MANIFEST), []
+        )
+
+    def test_a_plugin_with_no_package_entry_is_reported(self):
+        problems = cm.check_release_coverage(marketplace(), {"packages": {}}, {})
+        self.assertTrue(any("never releases" in p for p in problems))
+
+    def test_a_plugin_missing_from_the_manifest_is_reported(self):
+        problems = cm.check_release_coverage(marketplace(), self.CONFIG, {})
+        self.assertTrue(any("release-please-manifest" in p for p in problems))
+
+    def test_a_package_entry_without_a_component_is_reported(self):
+        package = {k: v for k, v in self.PACKAGE.items() if k != "component"}
+        problems = cm.check_release_coverage(
+            marketplace(), {"packages": {"plugins/ad-general": package}}, self.MANIFEST
+        )
+        self.assertTrue(any("no component" in p for p in problems))
+
+    def test_a_package_entry_that_does_not_bump_plugin_json_is_reported(self):
+        package = {"component": "ad-general"}
+        problems = cm.check_release_coverage(
+            marketplace(), {"packages": {"plugins/ad-general": package}}, self.MANIFEST
+        )
+        self.assertTrue(any("published version" in p for p in problems))
+
+    def test_extra_files_pointing_elsewhere_is_reported(self):
+        package = {
+            "component": "ad-general",
+            "extra-files": [{"type": "json", "path": "version.json", "jsonpath": "$.version"}],
+        }
+        problems = cm.check_release_coverage(
+            marketplace(), {"packages": {"plugins/ad-general": package}}, self.MANIFEST
+        )
+        self.assertTrue(any("published version" in p for p in problems))
+
+    def test_a_leftover_whole_repo_package_is_reported(self):
+        # The configuration this replaced had exactly this entry, so a bad
+        # merge bringing it back would resurrect the repo-wide release.
+        config = {"packages": {".": {}, "plugins/ad-general": self.PACKAGE}}
+        problems = cm.check_release_coverage(marketplace(), config, self.MANIFEST)
+        self.assertTrue(any("not a plugin in the marketplace" in p for p in problems))
+
+    def test_a_bare_name_source_is_covered_too(self):
+        # check() resolves these through pluginRoot; when only one of the two
+        # understood them, a repo using pluginRoot lost this cover silently.
+        mp = marketplace(
+            metadata={"pluginRoot": "./plugins"},
+            plugins=[{"name": "ad-general", "source": "ad-general"}],
+        )
+        self.assertEqual(cm.check_release_coverage(mp, self.CONFIG, self.MANIFEST), [])
+        problems = cm.check_release_coverage(mp, {"packages": {}}, {})
+        self.assertTrue(any("never releases" in p for p in problems))
+
+    def test_a_manifest_version_that_is_not_a_string_is_reported(self):
+        problems = cm.check_release_coverage(
+            marketplace(), self.CONFIG, {"plugins/ad-general": None}
+        )
+        self.assertTrue(any("not a string" in p for p in problems))
+
+    def test_a_second_plugin_needs_its_own_entry(self):
+        mp = marketplace(
+            plugins=[
+                {"name": "ad-general", "source": "./plugins/ad-general"},
+                {"name": "ad-product", "source": "./plugins/ad-product"},
+            ]
+        )
+        problems = cm.check_release_coverage(mp, self.CONFIG, self.MANIFEST)
+        self.assertTrue(any("ad-product" in p for p in problems))
+
+    def test_a_remote_plugin_needs_no_entry(self):
+        mp = marketplace(
+            plugins=[{"name": "third-party", "source": {"source": "github", "repo": "a/b"}}]
+        )
+        self.assertEqual(cm.check_release_coverage(mp, {"packages": {}}, {}), [])
+
+    def test_a_config_without_packages_is_reported(self):
+        problems = cm.check_release_coverage(marketplace(), {}, {})
+        self.assertTrue(any("no packages object" in p for p in problems))
+
+    def test_a_trailing_slash_in_a_source_still_matches(self):
+        mp = marketplace(plugins=[{"name": "ad-general", "source": "./plugins/ad-general/"}])
+        self.assertEqual(
+            cm.check_release_coverage(mp, self.CONFIG, self.MANIFEST), []
+        )
 
 
 class MainTests(unittest.TestCase):
@@ -247,6 +346,40 @@ class MainTests(unittest.TestCase):
             (root / ".claude-plugin" / "marketplace.json").write_text(
                 json.dumps(marketplace()), encoding="utf-8"
             )  # the plugin directory is deliberately absent
+            self.assertEqual(cm.main(tmp), 1)
+
+    def test_a_plugin_with_no_release_entry_exits_non_zero(self):
+        # The release check reaches main() only through one line; without this
+        # that line can be deleted and all other tests still pass.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / ".claude-plugin").mkdir(parents=True)
+            (root / ".claude-plugin" / "marketplace.json").write_text(
+                json.dumps(marketplace()), encoding="utf-8"
+            )
+            plugin = root / "plugins" / "ad-general" / ".claude-plugin"
+            plugin.mkdir(parents=True)
+            (plugin / "plugin.json").write_text(
+                json.dumps({"name": "ad-general", "version": "0.0.0"}), encoding="utf-8"
+            )
+            (root / "release-please-config.json").write_text(
+                json.dumps({"packages": {}}), encoding="utf-8"
+            )
+            self.assertEqual(cm.main(tmp), 1)
+
+    def test_an_unreadable_release_config_exits_non_zero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / ".claude-plugin").mkdir(parents=True)
+            (root / ".claude-plugin" / "marketplace.json").write_text(
+                json.dumps(marketplace()), encoding="utf-8"
+            )
+            plugin = root / "plugins" / "ad-general" / ".claude-plugin"
+            plugin.mkdir(parents=True)
+            (plugin / "plugin.json").write_text(
+                json.dumps({"name": "ad-general", "version": "0.0.0"}), encoding="utf-8"
+            )
+            (root / "release-please-config.json").write_text("{not json", encoding="utf-8")
             self.assertEqual(cm.main(tmp), 1)
 
     def test_this_repository_passes(self):

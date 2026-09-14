@@ -1,17 +1,25 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "separate-pull-requests": true,
   "packages": {
-    ".": {
+    "plugins/ad-general": {
       "release-type": "simple",
+      "component": "ad-general",
       "extra-files": [
         {
           "type": "json",
-          "path": "plugins/ad-general/.claude-plugin/plugin.json",
+          "path": ".claude-plugin/plugin.json",
           "jsonpath": "$.version"
-        },
+        }
+      ]
+    },
+    "plugins/ad-product": {
+      "release-type": "simple",
+      "component": "ad-product",
+      "extra-files": [
         {
           "type": "json",
-          "path": "plugins/ad-product/.claude-plugin/plugin.json",
+          "path": ".claude-plugin/plugin.json",
           "jsonpath": "$.version"
         }
       ]

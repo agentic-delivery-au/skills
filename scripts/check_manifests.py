@@ -29,6 +29,25 @@ SEMVER = re.compile(
 )
 # Claude Desktop's managed sync drops a marketplace named any of these.
 RESERVED = {"org", "org-provisioned", "unknown"}
+ABSENT = object()
+
+
+def local_path(source: object, plugin_root: object) -> str | None:
+    """The repo-relative directory a source points at, or None if it is remote.
+
+    Shared by both checks: when only one of them understood bare names, a repo
+    using metadata.pluginRoot lost the other's cover with no signal.
+    """
+    if not isinstance(source, str):
+        return None
+    if source.startswith("./"):
+        relative = source[2:]
+    elif isinstance(plugin_root, str):
+        relative = f"{plugin_root.rstrip('/')}/{source}"
+        relative = relative[2:] if relative.startswith("./") else relative
+    else:
+        return None
+    return pathlib.PurePosixPath(relative).as_posix().rstrip("/") or None
 
 
 def check_name(label: str, name: object) -> list[str]:
@@ -93,15 +112,13 @@ def check(marketplace: object, load_plugin) -> list[str]:
             problems.append(f'{label}: source "{source}" contains "..", which the format forbids')
             continue
 
-        path = source if source.startswith("./") else None
+        path = local_path(source, root)
         if path is None:
-            if not isinstance(root, str):
-                problems.append(
-                    f'{label}: source "{source}" is neither a ./ path nor a name under '
-                    "metadata.pluginRoot"
-                )
-                continue
-            path = f"{root.rstrip('/')}/{source}"
+            problems.append(
+                f'{label}: source "{source}" is neither a ./ path nor a name under '
+                "metadata.pluginRoot"
+            )
+            continue
 
         try:
             plugin = load_plugin(path)
@@ -127,6 +144,89 @@ def check(marketplace: object, load_plugin) -> list[str]:
             problems.append(f'{label}: version "{version}" is not semver')
 
     return problems
+
+
+def check_release_coverage(marketplace: object, config: object, manifest: object) -> list[str]:
+    """Every plugin needs a release-please package entry, and a correct one.
+
+    A missing entry means the plugin never releases. An entry without the right
+    extra-files means it releases while the version a consumer reads never
+    moves, and one without a component means two plugins fight over one tag.
+    """
+    if not isinstance(marketplace, dict) or not isinstance(config, dict):
+        return []
+    packages = config.get("packages")
+    if not isinstance(packages, dict):
+        return ["release-please-config.json has no packages object"]
+    versions = manifest if isinstance(manifest, dict) else {}
+
+    problems = []
+    root = (marketplace.get("metadata") or {}).get("pluginRoot")
+    expected = set()
+
+    for entry in marketplace.get("plugins") or []:
+        if not isinstance(entry, dict):
+            continue
+        path = local_path(entry.get("source"), root)
+        if path is None:
+            continue
+        expected.add(path)
+        label = f'plugin "{entry.get("name")}"'
+
+        package = packages.get(path)
+        if package is None:
+            problems.append(
+                f"{label}: {path} has no release-please package entry, so it never releases"
+            )
+        else:
+            problems += check_package(label, path, package)
+
+        # get() cannot tell an absent key from one holding null, and the two
+        # are different mistakes.
+        version = versions.get(path, ABSENT)
+        if version is ABSENT:
+            problems.append(f"{label}: {path} is missing from .release-please-manifest.json")
+        elif not isinstance(version, str):
+            problems.append(f"{label}: its .release-please-manifest.json version is not a string")
+
+    for path in sorted(set(packages) - expected):
+        problems.append(
+            f"release-please releases {path}, which is not a plugin in the marketplace"
+        )
+    return problems
+
+
+def check_package(label: str, path: str, package: object) -> list[str]:
+    if not isinstance(package, dict):
+        return [f"{label}: its release-please package entry is not an object"]
+    problems = []
+    # Without a component both packages tag the same name and collide.
+    if not package.get("component"):
+        problems.append(f"{label}: its release-please package entry has no component")
+    wanted = ".claude-plugin/plugin.json"
+    files = package.get("extra-files")
+    files = files if isinstance(files, list) else []
+    if not any(
+        isinstance(f, dict)
+        and str(f.get("path", "")).endswith(wanted)
+        and f.get("jsonpath") == "$.version"
+        for f in files
+    ):
+        problems.append(
+            f"{label}: nothing in its extra-files bumps {wanted}, so the published version "
+            "would never move"
+        )
+    return problems
+
+
+def read_json(path: pathlib.Path) -> object | None:
+    """None when the file is absent; a parse or read failure is the caller's."""
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+READ_ERRORS = (json.JSONDecodeError, OSError, UnicodeDecodeError)
 
 
 def filesystem_loader(root: pathlib.Path):
@@ -158,6 +258,15 @@ def main(root: str | None = None) -> int:
         return 1
 
     problems = check(marketplace, filesystem_loader(base))
+    # Skipped when the repo does not use release-please at all.
+    try:
+        config = read_json(base / "release-please-config.json")
+        release_manifest = read_json(base / ".release-please-manifest.json")
+    except READ_ERRORS as err:
+        problems.append(f"a release-please file could not be read: {err}")
+    else:
+        if config is not None:
+            problems += check_release_coverage(marketplace, config, release_manifest)
     for problem in problems:
         print(problem, file=sys.stderr)
     return 1 if problems else 0
