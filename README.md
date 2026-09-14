@@ -18,8 +18,8 @@ the tooling and conventions that apply regardless of language:
 - **Releases** — [release-please](https://github.com/googleapis/release-please), configured in
   `release-please-config.json` and `.release-please-manifest.json`. See [Releases](#releases) for
   what a new repo has to change.
-- **License** — `LICENSE` is a placeholder, not a grant. A repo created from this template chooses a
-  real license before the code is shared outside the organisation.
+- **License** — [MIT](LICENSE). Covers this repository's own content; a vendored third-party skill
+  keeps the licence it came with.
 - **`AGENTS.md`** — the starting rules for an AI agent working in a new repo, read by any agent that
   supports the convention. `CLAUDE.md` is a one-line pointer to it, kept only so Claude Code finds
   it.
