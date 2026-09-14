@@ -17,8 +17,9 @@ All commits go through [pre-commit](https://pre-commit.com). Config: `.pre-commi
   check-merge-conflict, check-added-large-files, mixed-line-ending (LF), actionlint (workflow
   expressions, runner labels, and shellcheck over `run:` scripts), shellcheck over tracked `.sh`
   files, the unit tests under `scripts/`, the marketplace and plugin manifest checks,
-  skill-validator over each plugin's skills (one entry per plugin), betterleaks secret scanning
-  (`.betterleaks.toml` holds what the repo treats as benign).
+  skill-validator over each plugin's skills (one entry per plugin, and a check that no plugin is
+  missing one), betterleaks secret scanning (`.betterleaks.toml` holds what the repo treats as
+  benign).
 - Run against everything with `pre-commit run --all-files`; bump hook versions with
   `pre-commit autoupdate`. CI re-runs the full hook suite on every PR.
 
