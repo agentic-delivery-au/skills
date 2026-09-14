@@ -68,15 +68,48 @@ repos:
 
   - repo: local
     hooks:
-      # The --apply path writes real repository settings, so a fake gh is the
-      # only place it gets exercised. Runs on any scripts/ change, not just the
-      # test file, since the script is what the assertions are about.
-      - id: bootstrap-repo-tests
-        name: bootstrap_repo tests
+      # Every unittest under scripts/. The bootstrap script's --apply path
+      # writes real repository settings, so a fake gh is the only place it gets
+      # exercised. Runs on any scripts/ change, not just the test files, since
+      # the scripts are what the assertions are about.
+      - id: script-tests
+        name: scripts tests
         entry: python3 -m unittest discover -s scripts -t scripts
         language: system
         pass_filenames: false
         files: ^scripts/.*\.py$
+
+  # Structure only: required keys, types, valid JSON. Schemas are fetched from
+  # SchemaStore, which tracks the manifest format upstream -- a vendored copy
+  # would go stale silently, which is the worse failure for a check like this.
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.38.0
+    hooks:
+      - id: check-jsonschema
+        name: validate marketplace.json
+        files: ^\.claude-plugin/marketplace\.json$
+        args:
+          - --schemafile
+          - https://www.schemastore.org/claude-code-marketplace.json
+      - id: check-jsonschema
+        name: validate plugin.json
+        files: ^plugins/[^/]+/\.claude-plugin/plugin\.json$
+        args:
+          - --schemafile
+          - https://www.schemastore.org/claude-code-plugin-manifest.json
+
+  - repo: local
+    hooks:
+      # What a schema cannot say: that a plugin's source resolves, that both
+      # manifests agree on its name, and that a name survives the claude.ai
+      # sync. A dangling source is the one that matters -- it is how a plugin
+      # silently stops existing while every file still parses.
+      - id: check-manifests
+        name: marketplace and plugins agree
+        entry: python3 scripts/check_manifests.py
+        language: system
+        pass_filenames: false
+        files: ^(\.claude-plugin/|plugins/)
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1-1
