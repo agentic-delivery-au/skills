@@ -91,18 +91,31 @@ the App token does all the work.
 
 ## Releases
 
-[release-please](https://github.com/googleapis/release-please) reads the Conventional Commits landed
-on `main` and keeps an open release PR that bumps the version and updates `CHANGELOG.md`. Merging
-that PR tags the version and publishes the GitHub release.
+Each plugin is versioned on its own. [release-please](https://github.com/googleapis/release-please)
+reads the Conventional Commits landed on `main`, attributes each to the plugin whose files it
+touched, and keeps a release pull request open per plugin. Merging one tags that plugin and
+publishes its GitHub release, leaving the others where they are.
 
 The version that matters is the one a marketplace consumer reads, `version` in the plugin's
-`.claude-plugin/plugin.json`. `release-please-config.json` points at it with `extra-files` and a
-jsonpath, so a release bumps that field. There is no `version.txt` here: nothing read it.
+`.claude-plugin/plugin.json`. `release-please-config.json` has a package entry per plugin path
+pointing at it with `extra-files` and a jsonpath, and `.release-please-manifest.json` records where
+each plugin has got to. A changelog is written beside the plugin it describes, not at the root, and
+a tag carries the plugin's name: `ad-general-v0.2.0`.
 
-A second plugin makes this repo a monorepo, and one shared version across independently useful
-plugins stops being honest at that point. The
-[manifest releaser docs](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
-cover a package entry per plugin, and `"separate-pull-requests": true` for a release PR each.
+Plugins start at `0.1.0` and a feature bumps the minor, so a version says what changed without
+claiming the skills have settled. `1.0.0` is a decision to make per plugin, not a default to arrive
+at by accident.
+
+Two things follow from releasing per plugin. A commit that touches nothing under `plugins/` belongs
+to no plugin, so hook changes, scripts, workflows and this README appear in no changelog and trigger
+no release. And each plugin still carries a `version.txt` updater it has no file for, so every run
+logs `file plugins/<name>/version.txt did not exist` — harmless, and the reason nothing here creates
+one.
+
+Adding a plugin means adding its entry to both files. Nothing about a release would fail if you
+forgot — the plugin would simply never release, sitting at whatever version it was created with — so
+the manifest check fails the commit instead, and it also fails an entry that releases without
+bumping `plugin.json` or without a component to tag.
 
 ## Keeping up with the template
 

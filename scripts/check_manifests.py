@@ -29,6 +29,30 @@ SEMVER = re.compile(
 )
 # Claude Desktop's managed sync drops a marketplace named any of these.
 RESERVED = {"org", "org-provisioned", "unknown"}
+ABSENT = object()
+
+
+def local_path(source: object, plugin_root: object) -> str | None:
+    """The repo-relative directory a source points at, or None if it is remote.
+
+    Shared by both checks: when only one of them understood bare names, a repo
+    using metadata.pluginRoot lost the other's cover with no signal.
+    """
+    if not isinstance(source, str):
+        return None
+    if source.startswith("./"):
+        relative = source[2:]
+    elif isinstance(plugin_root, str):
+        relative = f"{plugin_root.rstrip('/')}/{source}"
+        relative = relative[2:] if relative.startswith("./") else relative
+    else:
+        return None
+    resolved = pathlib.PurePosixPath(relative)
+    # ".//plugins/x" slices to "/plugins/x", and root / "/plugins/x" discards
+    # the root, so the loader would read outside the repository.
+    if resolved.is_absolute():
+        return None
+    return resolved.as_posix().rstrip("/") or None
 
 
 def check_name(label: str, name: object) -> list[str]:
@@ -93,15 +117,13 @@ def check(marketplace: object, load_plugin) -> list[str]:
             problems.append(f'{label}: source "{source}" contains "..", which the format forbids')
             continue
 
-        path = source if source.startswith("./") else None
+        path = local_path(source, root)
         if path is None:
-            if not isinstance(root, str):
-                problems.append(
-                    f'{label}: source "{source}" is neither a ./ path nor a name under '
-                    "metadata.pluginRoot"
-                )
-                continue
-            path = f"{root.rstrip('/')}/{source}"
+            problems.append(
+                f'{label}: source "{source}" is neither a ./ path nor a name under '
+                "metadata.pluginRoot"
+            )
+            continue
 
         try:
             plugin = load_plugin(path)
@@ -127,6 +149,111 @@ def check(marketplace: object, load_plugin) -> list[str]:
             problems.append(f'{label}: version "{version}" is not semver')
 
     return problems
+
+
+def check_release_coverage(marketplace: object, config: object, manifest: object) -> list[str]:
+    """Every plugin needs a release-please package entry, and a correct one.
+
+    A missing entry means the plugin never releases. An entry without the right
+    extra-files means it releases while the version a consumer reads never
+    moves, and one without a component means two plugins fight over one tag.
+    """
+    if not isinstance(config, dict):
+        # check() reports a marketplace that is not an object; a config that is
+        # not one has to be reported here or it reads as "not configured".
+        return ["release-please-config.json does not hold an object"]
+    if not isinstance(marketplace, dict):
+        return []
+    packages = config.get("packages")
+    if not isinstance(packages, dict):
+        return ["release-please-config.json has no packages object"]
+    versions = manifest if isinstance(manifest, dict) else {}
+
+    problems = []
+    # check() reports these shapes; this function still has to survive them,
+    # because main() runs it whatever check() found.
+    metadata = marketplace.get("metadata")
+    root = metadata.get("pluginRoot") if isinstance(metadata, dict) else None
+    plugins = marketplace.get("plugins")
+    plugins = plugins if isinstance(plugins, list) else []
+    expected = set()
+    components: set[str] = set()
+
+    for entry in plugins:
+        if not isinstance(entry, dict):
+            continue
+        path = local_path(entry.get("source"), root)
+        if path is None:
+            continue
+        expected.add(path)
+        label = f'plugin "{entry.get("name")}"'
+
+        package = packages.get(path)
+        if package is None:
+            problems.append(
+                f"{label}: {path} has no release-please package entry, so it never releases"
+            )
+        else:
+            problems += check_package(label, package)
+            component = package.get("component") if isinstance(package, dict) else None
+            if isinstance(component, str) and component:  # a bad one is reported above
+                if component in components:
+                    problems.append(
+                        f'{label}: component "{component}" is already used by another package, '
+                        "so the two would tag the same name"
+                    )
+                components.add(component)
+
+        # get() cannot tell an absent key from one holding null, and the two
+        # are different mistakes.
+        version = versions.get(path, ABSENT)
+        if version is ABSENT:
+            problems.append(f"{label}: {path} is missing from .release-please-manifest.json")
+        elif not isinstance(version, str):
+            problems.append(f"{label}: its .release-please-manifest.json version is not a string")
+
+    for path in sorted(set(packages) - expected):
+        problems.append(
+            f"release-please releases {path}, which is not a plugin in the marketplace"
+        )
+    return problems
+
+
+def check_package(label: str, package: object) -> list[str]:
+    if not isinstance(package, dict):
+        return [f"{label}: its release-please package entry is not an object"]
+    problems = []
+    # Without a component both packages tag the same name and collide.
+    component = package.get("component")
+    if not isinstance(component, str) or not component:
+        problems.append(f"{label}: its release-please package entry has no component string")
+    # Exact, not a suffix: extra-files paths are package-relative, so
+    # nested/.claude-plugin/plugin.json would bump a file no consumer reads.
+    wanted = ".claude-plugin/plugin.json"
+    files = package.get("extra-files")
+    files = files if isinstance(files, list) else []
+    if not any(
+        isinstance(f, dict)
+        and f.get("type") == "json"
+        and pathlib.PurePosixPath(str(f.get("path", ""))).as_posix() == wanted
+        and f.get("jsonpath") == "$.version"
+        for f in files
+    ):
+        problems.append(
+            f"{label}: nothing in its extra-files bumps {wanted}, so the published version "
+            "would never move"
+        )
+    return problems
+
+
+def read_json(path: pathlib.Path) -> object | None:
+    """None when the file is absent; a parse or read failure is the caller's."""
+    if not path.is_file():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+READ_ERRORS = (json.JSONDecodeError, OSError, UnicodeDecodeError)
 
 
 def filesystem_loader(root: pathlib.Path):
@@ -158,6 +285,17 @@ def main(root: str | None = None) -> int:
         return 1
 
     problems = check(marketplace, filesystem_loader(base))
+    # Absence means the repo does not release; a file holding null is
+    # configured and broken, which read_json cannot distinguish on its own.
+    config_path = base / "release-please-config.json"
+    if config_path.is_file():
+        try:
+            config = read_json(config_path)
+            release_manifest = read_json(base / ".release-please-manifest.json")
+        except READ_ERRORS as err:
+            problems.append(f"a release-please file could not be read: {err}")
+        else:
+            problems += check_release_coverage(marketplace, config, release_manifest)
     for problem in problems:
         print(problem, file=sys.stderr)
     return 1 if problems else 0
