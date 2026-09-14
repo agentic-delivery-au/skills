@@ -39,9 +39,8 @@ diff already tell the story. Testing carries evidence, not process.
 
 One concern per pull request, refactoring in its own.
 
-Do not reformat or rename what the task did not touch: it buries the real change under noise a
-reviewer has to sort from the substance. mdformat reflows the paragraph you edit, so even a one-word
-prose change spreads further than it looks.
+Do not reformat or rename what the task did not touch; it buries the real change. mdformat reflows
+the paragraph you edit, so a one-word prose change spreads further than it looks.
 
 No drive-by fixes. Open an issue.
 
