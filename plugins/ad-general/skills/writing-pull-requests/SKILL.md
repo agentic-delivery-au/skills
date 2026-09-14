@@ -21,9 +21,9 @@ expensive.
 
 ## The two failures
 
-Both read as thoroughness. Both cost the reviewer time.
+Each reads as thoroughness and costs the reviewer time.
 
-**Re-stating the issue.** From this repository. The issue:
+**Re-stating the issue.** A pair from this repository. The issue:
 
 > `LICENSE` is the template's placeholder: it says a licence has not been chosen and grants nothing.
 > […] visible is not the same as usable.
@@ -33,8 +33,8 @@ The description of the pull request that closed it:
 > `LICENSE` was the base template's placeholder: it stated that no licence had been chosen and
 > granted nothing to anyone. […] visible is not the same as usable.
 
-The same paragraph, retyped in the past tense, down to the closing clause. The reviewer had already
-read it. `Fixes: #2` was the whole job.
+The same paragraph, retyped in the past tense, down to the closing clause. The reviewer had read it
+once. `Fixes: #2` was the whole job.
 
 **Restating the code.** The files changed are listed above the description, and the diff is one
 click away. A description that walks through them adds a second, staler copy.
@@ -56,13 +56,13 @@ has made. Each is formatting doing the work that substance should.
 - **Evidence it works.** The thing the diff cannot show.
 - **A surprise.** Anything in the diff that would make a reviewer stop, guess wrong, or object.
 - **A decision with an alternative.** Where an obvious other route was rejected, one line on why,
-  because the reviewer will otherwise suggest it.
+  because the reviewer will suggest it if you leave it out.
 - **A consequence outside the diff.** A setting to change, an ordering against another PR, something
   that must happen before or after merge.
 
-Nothing else. A change where none of these apply needs no prose — the title and the diff have
-already said it. What a repository requires is not prose and still applies: an issue reference, the
-fields of a pull request template, a trailer. Leave those; drop the paragraphs around them.
+Nothing else. A change where none of these apply needs no prose — the title and the diff have said
+it. What a repository requires is not prose and still applies: an issue reference, the fields of a
+pull request template, a trailer. Leave those; drop the paragraphs around them.
 
 ## Evidence, not process
 
@@ -74,14 +74,13 @@ fields of a pull request template, a trailer. Leave those; drop the paragraphs a
 | "Tested manually"                     | What was run, and what it printed                  |
 | "Added tests"                         | The case that would have failed before this change |
 
-A wall of green is not evidence. It is a screenshot of a green light, and it buries the one line
-that mattered.
+A wall of green shows that a check ran, and buries the one line a reviewer needed to see.
 
-## Proportionate is not short
+## Some changes earn their paragraphs
 
 A change that alters an interface, makes an irreversible decision, or turns out to rest on something
-counter-intuitive earns its paragraphs. The test is never the size of the diff — a one-line change
-can need three paragraphs and a thousand-line rename can need none.
+counter-intuitive earns its paragraphs. Size of the diff is the wrong measure: a one-line change can
+need three paragraphs and a thousand-line rename can need none.
 
 ## Where squash merge is used
 
