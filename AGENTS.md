@@ -39,8 +39,9 @@ diff already tell the story. Testing carries evidence, not process.
 
 One concern per pull request, refactoring in its own.
 
-Do not reformat or rename what the task did not touch. Prettier rewraps whole files here, so one
-unrelated edit produces a diff nobody can read.
+Do not reformat or rename what the task did not touch: it buries the real change under noise a
+reviewer has to sort from the substance. mdformat reflows the paragraph you edit, so even a one-word
+prose change spreads further than it looks.
 
 No drive-by fixes. Open an issue.
 
