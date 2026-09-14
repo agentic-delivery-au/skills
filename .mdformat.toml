@@ -3,3 +3,7 @@
 
 wrap = 100          # wrap prose at 100 columns
 end_of_line = "lf"
+
+# Needs Python 3.13+: below that mdformat refuses to run at all rather than
+# ignoring this key. release-please owns the changelogs and rewrites them.
+exclude = ["**/CHANGELOG.md"]
