@@ -23,10 +23,6 @@ repos:
     rev: 1.0.0
     hooks:
       - id: mdformat
-        # release-please owns each plugin's CHANGELOG.md and rewrites it in its
-        # own format on every release, so formatting it starts a tug of war.
-        # Unanchored: the changelogs live under plugins/, not at the root.
-        exclude: (^|/)CHANGELOG\.md$
         additional_dependencies:
           - mdformat-gfm
           - mdformat-footnote
@@ -38,7 +34,6 @@ repos:
     rev: v0.49.1
     hooks:
       - id: markdownlint
-        exclude: (^|/)CHANGELOG\.md$
         args: ["--config", ".markdownlint.jsonc"]
 
   - repo: https://github.com/agent-ecosystem/skill-validator
@@ -56,6 +51,10 @@ repos:
       - id: skill-validator
         name: validate ad-product skills
         args: [check, "plugins/ad-product/skills/"]
+        language_version: "1.27.0"
+      - id: skill-validator
+        name: validate ad-vendor skills
+        args: [check, "plugins/ad-vendor/skills/"]
         language_version: "1.27.0"
 
   - repo: https://github.com/rhysd/actionlint

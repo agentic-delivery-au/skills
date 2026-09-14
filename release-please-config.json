@@ -27,6 +27,19 @@
       ],
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "plugins/ad-vendor": {
+      "release-type": "simple",
+      "component": "ad-vendor",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": ".claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        }
+      ],
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

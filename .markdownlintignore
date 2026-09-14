@@ -2,3 +2,4 @@ node_modules/
 .git/
 .claude/
 CHANGELOG.md
+plugins/ad-vendor/
