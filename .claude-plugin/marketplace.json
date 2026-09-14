@@ -15,6 +15,11 @@
       "name": "ad-product",
       "source": "./plugins/ad-product",
       "description": "Defining what to build and why: requirements, user stories, and the documents that carry them."
+    },
+    {
+      "name": "ad-vendor",
+      "source": "./plugins/ad-vendor",
+      "description": "Skills written elsewhere, vendored here with their own licences and provenance."
     }
   ]
 }
