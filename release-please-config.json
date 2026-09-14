@@ -11,7 +11,9 @@
           "path": ".claude-plugin/plugin.json",
           "jsonpath": "$.version"
         }
-      ]
+      ],
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     },
     "plugins/ad-product": {
       "release-type": "simple",
@@ -22,7 +24,9 @@
           "path": ".claude-plugin/plugin.json",
           "jsonpath": "$.version"
         }
-      ]
+      ],
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

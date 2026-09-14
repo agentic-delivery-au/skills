@@ -100,7 +100,11 @@ The version that matters is the one a marketplace consumer reads, `version` in t
 `.claude-plugin/plugin.json`. `release-please-config.json` has a package entry per plugin path
 pointing at it with `extra-files` and a jsonpath, and `.release-please-manifest.json` records where
 each plugin has got to. A changelog is written beside the plugin it describes, not at the root, and
-a tag carries the plugin's name: `ad-general-v1.2.0`.
+a tag carries the plugin's name: `ad-general-v0.2.0`.
+
+Plugins start at `0.1.0` and a feature bumps the minor, so a version says what changed without
+claiming the skills have settled. `1.0.0` is a decision to make per plugin, not a default to arrive
+at by accident.
 
 Two things follow from releasing per plugin. A commit that touches nothing under `plugins/` belongs
 to no plugin, so hook changes, scripts, workflows and this README appear in no changelog and trigger
