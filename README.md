@@ -39,8 +39,10 @@ only here.
 A new plugin needs more than a directory: an entry in `.claude-plugin/marketplace.json`, its own
 `.claude-plugin/plugin.json`, a package entry in `release-please-config.json` with a matching line
 in `.release-please-manifest.json`, and its own `skill-validator` entry in `.pre-commit-config.yaml`
-— that validator looks one level deep, so one entry per plugin. The hooks catch most of these. Keep
-the plugin list above honest while you are here.
+— that validator looks one level deep, so one entry per plugin. A missing validator entry fails the
+commit, and so does a missing release entry once the marketplace lists the plugin; a plugin
+directory the marketplace never lists slips past both, so start there. Keep the plugin list above
+honest while you are here, since nothing checks that either.
 
 `AGENTS.md` has the rules the hooks enforce, and the hooks themselves are in
 `.pre-commit-config.yaml`.
