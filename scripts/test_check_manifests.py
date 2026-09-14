@@ -259,6 +259,49 @@ class ReleaseCoverageTests(unittest.TestCase):
         )
         self.assertTrue(any("published version" in p for p in problems))
 
+    def test_a_config_that_is_not_an_object_is_reported(self):
+        # Silently returning success here reads as "release-please is not
+        # configured", while the workflow cannot consume the file at all.
+        for config in ([], "text", 7):
+            with self.subTest(config=config):
+                problems = cm.check_release_coverage(marketplace(), config, self.MANIFEST)
+                self.assertTrue(any("does not hold an object" in p for p in problems))
+
+    def test_two_packages_sharing_a_component_are_reported(self):
+        mp = marketplace(
+            plugins=[
+                {"name": "ad-general", "source": "./plugins/ad-general"},
+                {"name": "ad-product", "source": "./plugins/ad-product"},
+            ]
+        )
+        config = {
+            "packages": {
+                "plugins/ad-general": self.PACKAGE,
+                "plugins/ad-product": self.PACKAGE,
+            }
+        }
+        manifest = {"plugins/ad-general": "0.1.0", "plugins/ad-product": "0.1.0"}
+        problems = cm.check_release_coverage(mp, config, manifest)
+        self.assertTrue(any("already used by another package" in p for p in problems))
+
+    def test_extra_files_pointing_at_a_nested_manifest_is_reported(self):
+        # Paths are package-relative, so this would bump a plugin.json no
+        # consumer reads while leaving the real one behind.
+        package = {
+            "component": "ad-general",
+            "extra-files": [
+                {
+                    "type": "json",
+                    "path": "nested/.claude-plugin/plugin.json",
+                    "jsonpath": "$.version",
+                }
+            ],
+        }
+        problems = cm.check_release_coverage(
+            marketplace(), {"packages": {"plugins/ad-general": package}}, self.MANIFEST
+        )
+        self.assertTrue(any("published version" in p for p in problems))
+
     def test_a_leftover_whole_repo_package_is_reported(self):
         # The configuration this replaced had exactly this entry, so a bad
         # merge bringing it back would resurrect the repo-wide release.

@@ -153,7 +153,11 @@ def check_release_coverage(marketplace: object, config: object, manifest: object
     extra-files means it releases while the version a consumer reads never
     moves, and one without a component means two plugins fight over one tag.
     """
-    if not isinstance(marketplace, dict) or not isinstance(config, dict):
+    if not isinstance(config, dict):
+        # check() reports a marketplace that is not an object; a config that is
+        # not one has to be reported here or it reads as "not configured".
+        return ["release-please-config.json does not hold an object"]
+    if not isinstance(marketplace, dict):
         return []
     packages = config.get("packages")
     if not isinstance(packages, dict):
@@ -163,6 +167,7 @@ def check_release_coverage(marketplace: object, config: object, manifest: object
     problems = []
     root = (marketplace.get("metadata") or {}).get("pluginRoot")
     expected = set()
+    components: set[str] = set()
 
     for entry in marketplace.get("plugins") or []:
         if not isinstance(entry, dict):
@@ -179,7 +184,15 @@ def check_release_coverage(marketplace: object, config: object, manifest: object
                 f"{label}: {path} has no release-please package entry, so it never releases"
             )
         else:
-            problems += check_package(label, path, package)
+            problems += check_package(label, package)
+            component = package.get("component") if isinstance(package, dict) else None
+            if isinstance(component, str) and component:
+                if component in components:
+                    problems.append(
+                        f'{label}: component "{component}" is already used by another package, '
+                        "so the two would tag the same name"
+                    )
+                components.add(component)
 
         # get() cannot tell an absent key from one holding null, and the two
         # are different mistakes.
@@ -196,19 +209,21 @@ def check_release_coverage(marketplace: object, config: object, manifest: object
     return problems
 
 
-def check_package(label: str, path: str, package: object) -> list[str]:
+def check_package(label: str, package: object) -> list[str]:
     if not isinstance(package, dict):
         return [f"{label}: its release-please package entry is not an object"]
     problems = []
     # Without a component both packages tag the same name and collide.
     if not package.get("component"):
         problems.append(f"{label}: its release-please package entry has no component")
+    # Exact, not a suffix: extra-files paths are package-relative, so
+    # nested/.claude-plugin/plugin.json would bump a file no consumer reads.
     wanted = ".claude-plugin/plugin.json"
     files = package.get("extra-files")
     files = files if isinstance(files, list) else []
     if not any(
         isinstance(f, dict)
-        and str(f.get("path", "")).endswith(wanted)
+        and pathlib.PurePosixPath(str(f.get("path", ""))).as_posix() == wanted
         and f.get("jsonpath") == "$.version"
         for f in files
     ):
