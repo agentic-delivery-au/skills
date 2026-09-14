@@ -23,10 +23,6 @@ repos:
     rev: 1.0.0
     hooks:
       - id: mdformat
-        # release-please owns each plugin's CHANGELOG.md and rewrites it in its
-        # own format on every release, so formatting it starts a tug of war.
-        # Unanchored: the changelogs live under plugins/, not at the root.
-        exclude: (^|/)CHANGELOG\.md$
         additional_dependencies:
           - mdformat-gfm
           - mdformat-footnote
@@ -37,8 +33,9 @@ repos:
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.49.1
     hooks:
+      # CHANGELOG.md is skipped through .markdownlintignore, which markdownlint
+      # reads itself, so it holds for a direct run too.
       - id: markdownlint
-        exclude: (^|/)CHANGELOG\.md$
         args: ["--config", ".markdownlint.jsonc"]
 
   - repo: https://github.com/agent-ecosystem/skill-validator

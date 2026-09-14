@@ -3,3 +3,8 @@
 
 wrap = 100          # wrap prose at 100 columns
 end_of_line = "lf"
+
+# release-please owns every CHANGELOG.md and rewrites it in its own format, so
+# formatting one starts a tug of war. Here rather than in the hook config, so a
+# direct `mdformat .` run agrees with the hook.
+exclude = ["**/CHANGELOG.md"]
