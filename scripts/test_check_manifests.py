@@ -154,6 +154,14 @@ class CheckTests(unittest.TestCase):
         problems = cm.check(mp, loader(GOOD))
         self.assertTrue(any("not a directory" in p for p in problems))
 
+    def test_a_source_normalising_outside_the_repo_is_reported(self):
+        # ".//plugins/x" slices to an absolute path, which would make the
+        # loader read outside the repository entirely.
+        mp = marketplace(plugins=[{"name": "ad-general", "source": ".//plugins/ad-general"}])
+        problems = cm.check(mp, loader(GOOD))
+        self.assertTrue(any("neither a ./ path nor a name" in p for p in problems))
+        self.assertIsNone(cm.local_path(".//plugins/ad-general", None))
+
     def test_a_trailing_newline_in_a_name_is_reported(self):
         mp = marketplace(plugins=[{"name": "ad-general\n", "source": "./plugins/ad-general"}])
         problems = cm.check(mp, loader(GOOD))
@@ -301,6 +309,40 @@ class ReleaseCoverageTests(unittest.TestCase):
             marketplace(), {"packages": {"plugins/ad-general": package}}, self.MANIFEST
         )
         self.assertTrue(any("published version" in p for p in problems))
+
+    def test_a_component_that_is_not_a_string_is_reported(self):
+        # release-please puts the component in a branch and a tag name.
+        for component in (True, 1, {"name": "x"}, ""):
+            with self.subTest(component=component):
+                package = dict(self.PACKAGE, component=component)
+                problems = cm.check_release_coverage(
+                    marketplace(), {"packages": {"plugins/ad-general": package}}, self.MANIFEST
+                )
+                self.assertTrue(any("component string" in p for p in problems))
+
+    def test_extra_files_without_the_json_type_is_reported(self):
+        package = {
+            "component": "ad-general",
+            "extra-files": [
+                {"path": ".claude-plugin/plugin.json", "jsonpath": "$.version"},
+                {"type": "yaml", "path": ".claude-plugin/plugin.json", "jsonpath": "$.version"},
+            ],
+        }
+        problems = cm.check_release_coverage(
+            marketplace(), {"packages": {"plugins/ad-general": package}}, self.MANIFEST
+        )
+        self.assertTrue(any("published version" in p for p in problems))
+
+    def test_it_survives_the_shapes_check_reports(self):
+        # main() runs this whatever check() found, so a truthy invalid
+        # metadata or plugins value must not raise here.
+        for mp in (
+            marketplace(metadata="bad"),
+            marketplace(plugins=1),
+            marketplace(plugins="text"),
+        ):
+            with self.subTest(mp=mp):
+                cm.check_release_coverage(mp, self.CONFIG, self.MANIFEST)
 
     def test_a_leftover_whole_repo_package_is_reported(self):
         # The configuration this replaced had exactly this entry, so a bad

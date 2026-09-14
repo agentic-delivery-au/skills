@@ -47,7 +47,12 @@ def local_path(source: object, plugin_root: object) -> str | None:
         relative = relative[2:] if relative.startswith("./") else relative
     else:
         return None
-    return pathlib.PurePosixPath(relative).as_posix().rstrip("/") or None
+    resolved = pathlib.PurePosixPath(relative)
+    # ".//plugins/x" slices to "/plugins/x", and root / "/plugins/x" discards
+    # the root, so the loader would read outside the repository.
+    if resolved.is_absolute():
+        return None
+    return resolved.as_posix().rstrip("/") or None
 
 
 def check_name(label: str, name: object) -> list[str]:
@@ -165,11 +170,16 @@ def check_release_coverage(marketplace: object, config: object, manifest: object
     versions = manifest if isinstance(manifest, dict) else {}
 
     problems = []
-    root = (marketplace.get("metadata") or {}).get("pluginRoot")
+    # check() reports these shapes; this function still has to survive them,
+    # because main() runs it whatever check() found.
+    metadata = marketplace.get("metadata")
+    root = metadata.get("pluginRoot") if isinstance(metadata, dict) else None
+    plugins = marketplace.get("plugins")
+    plugins = plugins if isinstance(plugins, list) else []
     expected = set()
     components: set[str] = set()
 
-    for entry in marketplace.get("plugins") or []:
+    for entry in plugins:
         if not isinstance(entry, dict):
             continue
         path = local_path(entry.get("source"), root)
@@ -186,7 +196,7 @@ def check_release_coverage(marketplace: object, config: object, manifest: object
         else:
             problems += check_package(label, package)
             component = package.get("component") if isinstance(package, dict) else None
-            if isinstance(component, str) and component:
+            if isinstance(component, str) and component:  # a bad one is reported above
                 if component in components:
                     problems.append(
                         f'{label}: component "{component}" is already used by another package, '
@@ -214,8 +224,9 @@ def check_package(label: str, package: object) -> list[str]:
         return [f"{label}: its release-please package entry is not an object"]
     problems = []
     # Without a component both packages tag the same name and collide.
-    if not package.get("component"):
-        problems.append(f"{label}: its release-please package entry has no component")
+    component = package.get("component")
+    if not isinstance(component, str) or not component:
+        problems.append(f"{label}: its release-please package entry has no component string")
     # Exact, not a suffix: extra-files paths are package-relative, so
     # nested/.claude-plugin/plugin.json would bump a file no consumer reads.
     wanted = ".claude-plugin/plugin.json"
@@ -223,6 +234,7 @@ def check_package(label: str, package: object) -> list[str]:
     files = files if isinstance(files, list) else []
     if not any(
         isinstance(f, dict)
+        and f.get("type") == "json"
         and pathlib.PurePosixPath(str(f.get("path", ""))).as_posix() == wanted
         and f.get("jsonpath") == "$.version"
         for f in files
@@ -273,14 +285,16 @@ def main(root: str | None = None) -> int:
         return 1
 
     problems = check(marketplace, filesystem_loader(base))
-    # Skipped when the repo does not use release-please at all.
-    try:
-        config = read_json(base / "release-please-config.json")
-        release_manifest = read_json(base / ".release-please-manifest.json")
-    except READ_ERRORS as err:
-        problems.append(f"a release-please file could not be read: {err}")
-    else:
-        if config is not None:
+    # Absence means the repo does not release; a file holding null is
+    # configured and broken, which read_json cannot distinguish on its own.
+    config_path = base / "release-please-config.json"
+    if config_path.is_file():
+        try:
+            config = read_json(config_path)
+            release_manifest = read_json(base / ".release-please-manifest.json")
+        except READ_ERRORS as err:
+            problems.append(f"a release-please file could not be read: {err}")
+        else:
             problems += check_release_coverage(marketplace, config, release_manifest)
     for problem in problems:
         print(problem, file=sys.stderr)
