@@ -47,7 +47,7 @@ Applies to any typed language. A language-specific skill grounds it in concrete 
   is the postmortem you write next week.
 - **Exhaustive matching is the compiler's job.** When you match on a sum type, the compiler must
   fail compilation if a new variant is added without handling. Use the idiom your language provides:
-  `never`-typed binding in TypeScript, a `match` with no wildcard `_` arm in Rust,
+  `never`-typed binding in TypeScript, a `match` with no wildcard or catch-all arm in Rust,
   `-Werror=incomplete-patterns` in Haskell, sealed-class match exhaustiveness in Kotlin.
 - **Derive types from authoritative schemas.** When a protocol buffer, OpenAPI spec, GraphQL schema,
   database migration, or design-system token file defines a shape, derive from it instead of
