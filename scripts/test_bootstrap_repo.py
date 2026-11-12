@@ -108,6 +108,18 @@ class RulesetSummaryTests(unittest.TestCase):
             "required check: tests (integration 15368)", br.ruleset_summary(live)
         )
 
+    def test_copilot_reviews_once_at_open(self):
+        # A re-review on every push defeats the agents' one-re-review budget.
+        copilot = br._params(br.ruleset_payload(), "copilot_code_review")
+        self.assertIs(copilot["review_on_push"], False)
+
+    def test_a_live_ruleset_reviewing_every_push_is_a_difference(self):
+        live = matching_ruleset()
+        br._params(live, "copilot_code_review")["review_on_push"] = True
+        output, changes = execute(FakeGh(ruleset=live))
+        self.assertEqual(changes, 1)
+        self.assertIn("-copilot review on push: True", output)
+
 
 class GhTests(unittest.TestCase):
     """The one class that is not replaced by a fake, so it needs its own cover."""
