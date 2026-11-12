@@ -26,6 +26,8 @@ It is published to PyPI as `adr-check` and runs through `uvx`.
 
 A pre-commit hook sees only the working tree, so it cannot catch a change to a merged ADR. A hook
 can also be skipped locally, while CI runs on every pull request whatever the author's machine does.
+This decision does not make the CI check a required status check, so on its own it reports a problem
+rather than blocking the merge. Requiring it is a repository setting, decided separately.
 
 ## Considered options
 

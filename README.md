@@ -61,8 +61,9 @@ pre-commit install   # one-time, sets up the pre-commit and commit-msg hooks
 - **commitizen** enforces [Conventional Commits](https://www.conventionalcommits.org/) with a
   72-character subject limit.
 - **adr-check** checks the ADRs in `docs/adr/`, in the pre-commit hook and in CI. It needs `uvx`
-  locally. CI also compares a pull request with its base branch. A merged ADR is changed only by a
-  superseding ADR, or for a typo or link fix on a PR labelled `adr-correction`.
+  locally. CI also compares a pull request with its base branch; a push to `main` gets only the file
+  checks. A merged ADR is changed only by a superseding ADR, or for a typo or link fix on a PR
+  labelled `adr-correction`.
 
 ### Repository settings
 
