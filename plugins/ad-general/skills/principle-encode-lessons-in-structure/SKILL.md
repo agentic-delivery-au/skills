@@ -32,8 +32,9 @@ instruction IS the symptom.
 
 - **Capture every correction.** When the human intervenes or tests fail, decide if it's a one-off or
   a pattern.
-- **Route to the right layer.** One-off -> a note in whatever memory the agent keeps. Recurring fix
-  -> skill or lint rule. Systemic issue -> principle.
+- **Route to the right layer.** One-off -> a note in whatever memory the agent keeps, or, with none,
+  a line in your report to the person you work for. Recurring fix -> skill or lint rule. Systemic
+  issue -> principle.
 - **Close the loop.** Don't just record. Apply now or create a concrete todo.
 
 **Anti-patterns:**
