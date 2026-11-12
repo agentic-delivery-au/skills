@@ -1,5 +1,6 @@
 {
   "plugins/ad-general": "0.1.0",
   "plugins/ad-product": "0.1.0",
+  "plugins/ad-python": "0.0.0",
   "plugins/ad-vendor": "0.0.0"
 }
