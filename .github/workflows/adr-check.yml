@@ -32,6 +32,10 @@ jobs:
           persist-credentials: false
       # setup-uv publishes no bare major tag after v7, so pin a full version: @v10 404s.
       - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          # Pinned so a new uv release cannot change a CI result on its own.
+          # Keep in step with the other workflow's setup-uv step.
+          version: "0.13.8"
       - name: Run adr-check
         env:
           BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}

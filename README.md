@@ -62,8 +62,8 @@ pre-commit install   # one-time, sets up the pre-commit and commit-msg hooks
   72-character subject limit.
 - **adr-check** checks the ADRs in `docs/adr/`, in the pre-commit hook and in CI. It needs `uvx`
   locally. CI also compares a pull request with its base branch; a push to `main` gets only the file
-  checks. A merged ADR is changed only by a superseding ADR, or for a typo or link fix on a PR
-  labelled `adr-correction`.
+  checks. CI reports an edit to a merged ADR unless it is a typo or link fix on a PR labelled
+  `adr-correction`; a decision changes by a superseding ADR.
 
 ### Repository settings
 
