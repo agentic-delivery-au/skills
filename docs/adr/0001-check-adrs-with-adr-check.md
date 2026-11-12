@@ -20,12 +20,12 @@ its format and trust that a merged one still says what the team decided then. No
 checks either.
 
 `adr-check` checks the format of every ADR: filename, frontmatter, title, sections and supersession
-links. With `--mode ci` it also compares a branch with its base. It rejects an edit to a merged ADR,
-a deletion, a rename and a reused number, and with `--merging-to-main` it rejects `proposed`. It is
-published to PyPI as `adr-check` and runs through `uvx`.
+links. With `--mode ci` it also compares a branch with a base ref. It rejects an edit to a merged
+ADR, a deletion, a rename and a reused number, and with `--merging-to-main` it rejects `proposed`.
+It is published to PyPI as `adr-check` and runs through `uvx`.
 
 A pre-commit hook sees only the working tree, so it cannot catch a change to a merged ADR. A hook
-can also be skipped locally, and CI cannot.
+can also be skipped locally, while CI runs on every pull request whatever the author's machine does.
 
 ## Considered options
 
@@ -49,7 +49,9 @@ can also be skipped locally, and CI cannot.
 ## Decision
 
 We will run `adr-check` as a `pre-commit` hook over `docs/adr/`, and as a `pull_request` and `push`
-workflow in CI that compares each branch with `main`.
+workflow in CI. A pull request is compared with its base branch
+(`--mode ci --base-ref origin/<base>`), with `--merging-to-main` added when that base is `main`. A
+push to `main` runs only the checks on the files, with no comparison.
 
 We will pin the same version in `.pre-commit-config.yaml` and `.github/workflows/adr-check.yml`, and
 bump them together.
