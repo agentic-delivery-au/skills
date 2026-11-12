@@ -128,6 +128,15 @@ repos:
         pass_filenames: false
         always_run: true
 
+      - id: adr-check
+        name: adr-check
+        # uvx fetches the Python 3.14 the package needs, so no python3.14 on PATH is required.
+        # Keep the version in step with ADR_CHECK_VERSION in .github/workflows/adr-check.yml.
+        language: system
+        entry: uvx adr-check==0.1.1
+        files: ^docs/adr/
+        pass_filenames: false
+
   # Keeps this file honest: a hook matching nothing, or an exclude excluding
   # nothing, is a guardrail everyone believes in and nobody runs.
   - repo: meta

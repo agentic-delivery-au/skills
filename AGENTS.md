@@ -18,7 +18,8 @@ All commits go through [pre-commit](https://pre-commit.com). Config: `.pre-commi
   actionlint (workflow expressions, runner labels, and shellcheck over `run:` scripts), the unit
   tests under `scripts/`, the marketplace and plugin manifest checks, skill-validator over each
   plugin's skills (one entry per plugin, and a check that no plugin is missing one), betterleaks
-  secret scanning (`.betterleaks.toml` holds what the repo treats as benign).
+  secret scanning (`.betterleaks.toml` holds what the repo treats as benign), adr-check over
+  `docs/adr/` (needs `uvx`).
 - The `meta` hooks check `.pre-commit-config.yaml` against the repo: `check-hooks-apply` fails a
   hook that matches nothing, `check-useless-excludes` an exclude that excludes nothing. Both are how
   a guardrail everyone believes in stops quietly running.

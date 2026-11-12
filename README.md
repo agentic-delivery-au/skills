@@ -60,6 +60,8 @@ pre-commit install   # one-time, sets up the pre-commit and commit-msg hooks
 - **mdformat** formats Markdown and wraps prose at 100 columns (see `.mdformat.toml`).
 - **commitizen** enforces [Conventional Commits](https://www.conventionalcommits.org/) with a
   72-character subject limit.
+- **adr-check** checks the ADRs in `docs/adr/`, in the pre-commit hook and in CI. It needs `uvx`
+  locally. CI also compares a branch with `main`, so a merged ADR cannot be edited.
 
 ### Repository settings
 
