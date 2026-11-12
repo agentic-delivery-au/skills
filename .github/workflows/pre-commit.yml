@@ -31,6 +31,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
+      # The adr-check hook runs through uvx. Same tag as adr-check.yml; keep in step.
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          # Pinned so a new uv release cannot change a CI result on its own.
+          # Keep in step with the other workflow's setup-uv step.
+          version: "0.13.8"
       # Pinned so a new pre-commit release cannot change a CI result on its own;
       # bump in step with what contributors install locally.
       - run: python -m pip install pre-commit==4.6.2

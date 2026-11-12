@@ -1,0 +1,57 @@
+name: adr-check
+
+on:
+  pull_request:
+    # No `paths:` filter: a filtered workflow does not report on a PR that touches no ADR, so a required check would wait forever.
+    # labeled/unlabeled so adding adr-correction re-runs the check. `edited` keeps a retargeted PR current.
+    types: [opened, reopened, synchronize, edited, labeled, unlabeled]
+  push:
+    branches: [main]
+
+# An in-progress run on `main` is not cancelled; a newer push replaces only a pending one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # Keep in step with the `uvx adr-check==` pin in .pre-commit-config.yaml.
+  ADR_CHECK_VERSION: "0.1.1"
+
+jobs:
+  # The job id is the check name: `adr-check`.
+  adr-check:
+    runs-on: ubuntu-latest
+    steps:
+      # Full history, because ci mode diffs against the base branch.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # setup-uv publishes no bare major tag after v7, so pin a full version: @v10 404s.
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          # Pinned so a new uv release cannot change a CI result on its own.
+          # Keep in step with the other workflow's setup-uv step.
+          version: "0.13.8"
+      - name: Run adr-check
+        env:
+          BASE_REF: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || '' }}
+          EVENT_NAME: ${{ github.event_name }}
+          MERGING_TO_MAIN: ${{ (github.event_name == 'pull_request' && github.base_ref == github.event.repository.default_branch) || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          set -euo pipefail
+          args=(--adr-dir docs/adr)
+          if [[ "$MERGING_TO_MAIN" == "true" ]]; then
+            args+=(--merging-to-main)
+          fi
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            # A push has no PR labels, so comparing here would fail every merged adr-correction.
+            echo "::notice::A push runs only the checks on the files."
+          else
+            args+=(--mode ci --base-ref "$BASE_REF" --labels "$LABELS")
+          fi
+          uvx "adr-check==$ADR_CHECK_VERSION" "${args[@]}"
