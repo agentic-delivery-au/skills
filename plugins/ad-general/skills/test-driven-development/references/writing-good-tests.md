@@ -204,7 +204,7 @@ the test fail, then restore the code by undoing your own edit only.
 - The test greps source text, or asserts a removed symbol stays removed
 - The test would still matter if only the framework remained
 - The test exists for coverage, checking no side effect or outcome
-- An assertion checks a `*-mock` test ID, or fails if you remove the mock
+- An assertion checks a `*-mock` test ID, or that the mock exists or returns what you configured
 - A mock stands between two modules you own, and the mocked one is neither slow nor leaves your
   system
 - A test name needs the file open to be understood

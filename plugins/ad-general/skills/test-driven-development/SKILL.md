@@ -288,7 +288,7 @@ When writing or changing any test, read
 honest:
 
 - Name the production change that would make the test fail — before writing it
-- Assert on real behaviour, never on mock behaviour
+- Assert on real behaviour, never on the mock's presence or the responses you configured it with
 - Keep test-only code in test utilities, out of production classes
 - Understand a dependency's side effects before mocking it
 

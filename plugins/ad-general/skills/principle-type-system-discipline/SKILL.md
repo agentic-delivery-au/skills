@@ -16,14 +16,15 @@ Applies to any typed language. A language-specific skill grounds it in concrete 
 **The patterns:**
 
 - **Make illegal states unrepresentable.** Model variants as sum types: discriminated unions in
-  TypeScript, enums with payloads in Rust/Swift, sealed classes or interfaces in Kotlin/Scala, ADTs
-  in Haskell/OCaml. Don't model state as a bag of optional fields where contradictory combinations
-  compile. A subtle anti-pattern worth naming: `{ completed: boolean; completedAt?: Date }` admits
-  `completed: true; completedAt: undefined`, which is meaningless. Derive the boolean from a single
-  source: type the field `completedAt: Date | null` and ask `completedAt !== null`. Leaving it
-  optional keeps the bug — `undefined !== null` is `true`, so every incomplete item reads as
-  complete. Or model the variants explicitly as `{ kind: 'open' } | { kind: 'done'; at: Date }`. If
-  a bug forces the question "wait, can this combination actually happen?", the type is too loose.
+  TypeScript, enums with payloads in Rust/Swift, sealed classes or interfaces in Kotlin, sealed
+  traits in Scala, ADTs in Haskell/OCaml. Don't model state as a bag of optional fields where
+  contradictory combinations compile. A subtle anti-pattern worth naming:
+  `{ completed: boolean; completedAt?: Date }` admits `completed: true; completedAt: undefined`,
+  which is meaningless. Derive the boolean from a single source: type the field
+  `completedAt: Date | null` and ask `completedAt !== null`. Leaving it optional keeps the bug —
+  `undefined !== null` is `true`, so every incomplete item reads as complete. Or model the variants
+  explicitly as `{ kind: 'open' } | { kind: 'done'; at: Date }`. If a bug forces the question "wait,
+  can this combination actually happen?", the type is too loose.
 - **Types are constructions, not restrictions.** Build the type up from the values you want instead
   of carving them out of a looser type with checks. The invariant that seems to need a refinement
   type is usually a construction away. A non-empty list is a head plus a rest, not a list with a
@@ -33,9 +34,9 @@ Applies to any typed language. A language-specific skill grounds it in concrete 
   even-length list if you interpret it that way, so choose the shape that cannot build the illegal
   value and expose the interface callers need on top.
 - **Brand semantic primitives.** `UserId` and `OrderId` are strings underneath but should not be
-  interchangeable. Newtypes in Rust, opaque types in Swift, value classes in Kotlin, phantom types
-  in Haskell, branded intersections in TypeScript. Validate once at creation, trust the type
-  downstream.
+  interchangeable. Newtypes in Rust, single-field wrapper structs in Swift, value classes in Kotlin,
+  phantom types in Haskell, branded intersections in TypeScript. Validate once at creation, trust
+  the type downstream.
 - **External data is untyped until parsed.** RPC payloads, JSON, IPC messages, CLI args, config
   files, environment variables, database rows. Have a parse function at every boundary that turns
   unstructured input into the typed model. See the **principle-boundary-discipline** principle skill
@@ -46,8 +47,8 @@ Applies to any typed language. A language-specific skill grounds it in concrete 
   is the postmortem you write next week.
 - **Exhaustive matching is the compiler's job.** When you match on a sum type, the compiler must
   fail compilation if a new variant is added without handling. Use the idiom your language provides:
-  `never`-typed binding in TypeScript, unannotated `match` in Rust, `-Werror=incomplete-patterns` in
-  Haskell, sealed-class match exhaustiveness in Kotlin.
+  `never`-typed binding in TypeScript, a `match` with no wildcard `_` arm in Rust,
+  `-Werror=incomplete-patterns` in Haskell, sealed-class match exhaustiveness in Kotlin.
 - **Derive types from authoritative schemas.** When a protocol buffer, OpenAPI spec, GraphQL schema,
   database migration, or design-system token file defines a shape, derive from it instead of
   hand-rolling a parallel type. Manual duplication drifts. See the
