@@ -16,8 +16,8 @@ Applies to any typed language. A language-specific skill grounds it in concrete 
 **The patterns:**
 
 - **Make illegal states unrepresentable.** Model variants as sum types: discriminated unions in
-  TypeScript, enums with payloads in Rust/Swift/Kotlin, sealed classes in Scala, ADTs in
-  Haskell/OCaml. Don't model state as a bag of optional fields where contradictory combinations
+  TypeScript, enums with payloads in Rust/Swift, sealed classes or interfaces in Kotlin/Scala, ADTs
+  in Haskell/OCaml. Don't model state as a bag of optional fields where contradictory combinations
   compile. A subtle anti-pattern worth naming: `{ completed: boolean; completedAt?: Date }` admits
   `completed: true; completedAt: undefined`, which is meaningless. Derive the boolean from a single
   source: type the field `completedAt: Date | null` and ask `completedAt !== null`. Leaving it
@@ -46,7 +46,7 @@ Applies to any typed language. A language-specific skill grounds it in concrete 
   is the postmortem you write next week.
 - **Exhaustive matching is the compiler's job.** When you match on a sum type, the compiler must
   fail compilation if a new variant is added without handling. Use the idiom your language provides:
-  `never`-typed binding in TypeScript, unannotated `match` in Rust, `-Wincomplete-patterns` in
+  `never`-typed binding in TypeScript, unannotated `match` in Rust, `-Werror=incomplete-patterns` in
   Haskell, sealed-class match exhaustiveness in Kotlin.
 - **Derive types from authoritative schemas.** When a protocol buffer, OpenAPI spec, GraphQL schema,
   database migration, or design-system token file defines a shape, derive from it instead of

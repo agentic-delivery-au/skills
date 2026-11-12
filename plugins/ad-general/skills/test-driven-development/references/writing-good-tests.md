@@ -80,9 +80,11 @@ BEFORE writing the test body:
 
 ## Principle 2: Exercise the Real Thing
 
-**The mock earns no assertions.** A mock assertion passes when the mock is present and fails when it
-is absent — it says nothing about the component. Assert the real component's behaviour; if the mock
-is what you are checking, unmock it or delete the assertion.
+**The mock's presence earns no assertion.** An assertion that the mock exists, or returns what you
+configured, passes when the mock is present and fails when it is absent — it says nothing about the
+component. What the component sends to the mock is different: see "Make doubles specific" below.
+Assert the real component's behaviour; if the mock is what you are checking, unmock it or delete the
+assertion.
 
 ```typescript
 // ✅ Real behaviour
@@ -149,7 +151,7 @@ BEFORE adding a mock or test helper:
 
   A method only tests call lives in test utilities, not production.
 
-  About to assert on the mock itself?
+  About to assert that the mock exists, or returns what you configured?
     Unmock it or delete the assertion.
 ```
 
