@@ -148,8 +148,8 @@ in the diff of the PR that makes it.
   describes a different choice, means the record is wrong.
 - **On a PR labelled `adr-correction`:** is the change to the accepted ADR only a typo or a link
   fix, with its meaning unchanged? If it shifts the meaning, reject the label and ask for a
-  superseding ADR. This guard is advisory. Neither the script nor a reviewer can block a mislabelled
-  change, so it relies on the author applying the label honestly.
+  superseding ADR. The label switches off the script's check of the body, so the script cannot block
+  a mislabelled change; the reviewer reading the diff has to.
 - **On every PR, whether or not it touches `docs/adr/`:** does the change make an architecturally
   significant decision that needs an ADR? Apply the three tests in Write: the decision is hard to
   reverse, picks between real alternatives someone could reopen, or constrains other repos, teams or
