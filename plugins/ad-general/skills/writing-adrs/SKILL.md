@@ -115,9 +115,8 @@ Three edits are allowed:
 - **The supersession flip** above: `status` and `superseded_by` only.
 - **A correction**: a typo or a broken link, fixed on a PR labelled `adr-correction`. You apply the
   label. A correction changes no frontmatter and leaves the meaning as it was. A PR labelled
-  `adr-correction` always goes through the LLM review cycle, even though a typo or link fix would
-  otherwise count as trivial. Repointing a link is a correction. Changing "we will use" to "we will
-  not use" is a change, and needs a new ADR.
+  `adr-correction` is still reviewed like any other change, however small the fix. Repointing a link
+  is a correction. Changing "we will use" to "we will not use" is a change, and needs a new ADR.
 - **The renumbering repair.** If two ADRs share a number on `main`, the later-merged one is
   renumbered. The repair changes only that ADR's filename, its H1 number, and the `supersedes` and
   `superseded_by` numbers that point at it. Decide by hand which ADR each of those numbers meant.
