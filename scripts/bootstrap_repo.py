@@ -106,7 +106,7 @@ def ruleset_payload() -> dict:
             },
             {
                 "type": "copilot_code_review",
-                "parameters": {"review_on_push": True, "review_draft_pull_requests": False},
+                "parameters": {"review_on_push": False, "review_draft_pull_requests": False},
             },
             {
                 "type": "required_status_checks",
