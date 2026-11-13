@@ -40,7 +40,7 @@ evaluation: removing the import turns a bare forward reference into a `NameError
 the import there, or quote the name.
 
 ```python
-# Yes: the bare name works, though `Node` is not yet defined inside its own class.
+# Yes, in 3.14 code: the bare name works, though `Node` is not yet defined inside its own class.
 class Node:
     """One node of a tree."""
 
@@ -119,9 +119,10 @@ def _fake_fetch(url: str, timeout: int) -> dict[str, object]:  # noqa: ARG001  #
 ```
 
 If no caller supplies the argument at all, delete it. Two cases need neither: `ARG002` already skips
-a method decorated with `@typing.override`, because the checker enforces that signature; and a
-pytest fixture requested only for its side effect cannot be renamed, because pytest resolves
-fixtures by parameter name, so move it to `@pytest.mark.usefixtures("name")` and drop the parameter.
+a method decorated with `@typing.override` (3.12+; `@typing_extensions.override` for older targets),
+because the checker enforces that signature; and a pytest fixture requested only for its side effect
+cannot be renamed, because pytest resolves fixtures by parameter name, so move it to
+`@pytest.mark.usefixtures("name")` and drop the parameter.
 
 ## Imports
 
@@ -219,8 +220,10 @@ so a field that must stay put is a `tuple` rather than a `list`.
 
 ## Exhaustive matching
 
-Put `assert_never` in the fallthrough arm. Add a third variant to `LoadResult` and the checker
-points at every match that does not handle it, before anything runs.
+Put `assert_never` in the fallthrough arm. It is in `typing` from Python 3.11; code targeting an
+older version, such as the baseline's `scripts/**` at py310, imports it from `typing_extensions`
+instead. Add a third variant to `LoadResult` and the checker points at every match that does not
+handle it, before anything runs.
 
 ```python
 def describe(result: LoadResult) -> str:

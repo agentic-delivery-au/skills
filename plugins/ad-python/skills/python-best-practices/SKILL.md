@@ -70,15 +70,15 @@ quietly in a project config. Selecting extra rules on top is fine.
 
 From the principle skills, in Python syntax.
 
-| Pattern                        | In Python                                                                                                                                                                  |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Illegal states unrepresentable | A tagged union of frozen dataclasses, matched with `match`. Not one class carrying a `status` string and four optionals, which lets contradictory combinations construct.  |
-| Brand semantic primitives      | `NewType("OrderId", str)`. Validate once in a parse function, trust the type after.                                                                                        |
-| Exhaustive matching            | `typing.assert_never(x)` in the `case _:` arm, so Pyrefly fails when a variant is added and this match is not updated.                                                     |
-| `object` over `Any`            | `Any` disables checking everywhere it reaches. Untrusted input is `object`, narrowed before use.                                                                           |
-| Earned `cast`                  | `typing.cast` is an assertion the checker cannot verify, so it belongs on the last line of a parse function that checked every field it returns, and nowhere else.         |
-| Parse at the boundary          | HTTP payloads, JSON, database rows, environment variables and CLI arguments are untyped until a parse function turns them into a declared type. Do not re-validate inside. |
-| Strengthen only where partial  | Keep the plain `list[T]` while every operation on it is total. Tighten the type only where the loose one forces a `cast`, an `assert` or a "cannot happen" raise.          |
+| Pattern                        | In Python                                                                                                                                                                          |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Illegal states unrepresentable | A tagged union of frozen dataclasses, matched with `match`. Not one class carrying a `status` string and four optionals, which lets contradictory combinations construct.          |
+| Brand semantic primitives      | `NewType("OrderId", str)`. Validate once in a parse function, trust the type after.                                                                                                |
+| Exhaustive matching            | `typing.assert_never(x)` in the `case _:` arm (3.11+; `typing_extensions.assert_never` for older targets), so Pyrefly fails when a variant is added and this match is not updated. |
+| `object` over `Any`            | `Any` disables checking everywhere it reaches. Untrusted input is `object`, narrowed before use.                                                                                   |
+| Earned `cast`                  | `typing.cast` is an assertion the checker cannot verify, so it belongs on the last line of a parse function that checked every field it returns, and nowhere else.                 |
+| Parse at the boundary          | HTTP payloads, JSON, database rows, environment variables and CLI arguments are untyped until a parse function turns them into a declared type. Do not re-validate inside.         |
+| Strengthen only where partial  | Keep the plain `list[T]` while every operation on it is total. Tighten the type only where the loose one forces a `cast`, an `assert` or a "cannot happen" raise.                  |
 
 References:
 

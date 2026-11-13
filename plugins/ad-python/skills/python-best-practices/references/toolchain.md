@@ -118,8 +118,10 @@ of the configured set is explicitly allowed. Removing one to make existing code 
 
 ## Exhaustiveness is something the checker proves
 
-`typing.assert_never` in the fallthrough arm turns a new variant into a failed check rather than a
-runtime surprise. Add a third member to a union that two `case` arms cover and Pyrefly reports
+`typing.assert_never` (3.11+; `typing_extensions.assert_never` for older targets such as the
+baseline's `scripts/**` at py310) in the fallthrough arm turns a new variant into a failed check
+rather than a runtime surprise. Add a third member to a union that two `case` arms cover and Pyrefly
+reports
 `Argument ... is not assignable to parameter arg with type Never in function typing.assert_never [bad-argument-type]`,
 pointing at the match that was not updated. That error, not a passing test suite, is the evidence
 the union is handled everywhere.
