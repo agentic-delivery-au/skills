@@ -18,6 +18,7 @@ HOOKS_JSON = ROOT / "plugins" / "ad-python" / "hooks" / "hooks.json"
 
 FAKE_UV = r"""#!/usr/bin/env bash
 printf '%s\n' "$*" >>"$STUB_LOG"
+pwd >"$STUB_LOG.pwd"
 [ -z "${STUB_FINDINGS:-}" ] && exit 0
 echo "${!#}:1:8: F401 [*] \`os\` imported but unused"
 exit 1
@@ -50,13 +51,14 @@ class LintOnEditTest(unittest.TestCase):
         uv.chmod(uv.stat().st_mode | stat.S_IXUSR)
         return bin_dir
 
-    def run_hook(self, file, bin_dir=None, project=None, **env):
+    def run_hook(self, file, bin_dir=None, project=None, cwd=None, **env):
         payload = {"tool_input": {"file_path": str(file)}}
         return subprocess.run(
             [BASH, str(SCRIPT)],
             input=json.dumps(payload),
             capture_output=True,
             text=True,
+            cwd=cwd,
             env={
                 "PATH": str(bin_dir or self.bin),
                 "STUB_LOG": str(self.log),
@@ -88,7 +90,8 @@ class LintOnEditTest(unittest.TestCase):
     def test_ruff_honours_excludes_and_is_never_given_a_fix_flag(self):
         self.run_hook("mod.py", STUB_FINDINGS="1")
         self.assertEqual(
-            self.uv_calls(), ["run ruff check --force-exclude --output-format concise mod.py"]
+            self.uv_calls(),
+            [f"run ruff check --force-exclude --output-format concise {pathlib.Path.cwd()}/mod.py"],
         )
 
     def test_a_missing_jq_exits_1_and_says_so_on_stderr(self):
@@ -97,6 +100,21 @@ class LintOnEditTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("jq is not on PATH", result.stderr)
         self.assertEqual(self.uv_calls(), [])
+
+    def test_uv_runs_from_the_project_root_and_still_gets_the_edited_file(self):
+        elsewhere = pathlib.Path(self._tmp.name) / "elsewhere"
+        elsewhere.mkdir()
+        for file, expected in (
+            (self.project / "mod.py", self.project / "mod.py"),
+            ("mod.py", elsewhere / "mod.py"),
+        ):
+            with self.subTest(file=str(file)):
+                self.log.unlink(missing_ok=True)
+                result = self.run_hook(file, cwd=elsewhere)
+                self.assertEqual((result.returncode, result.stderr), (0, ""))
+                pwd = pathlib.Path(self.log.with_name("uv.log.pwd").read_text().strip())
+                self.assertEqual(pwd.resolve(), self.project.resolve())
+                self.assertTrue(self.uv_calls()[0].endswith(f" {expected}"))
 
     def test_a_missing_jq_reads_an_escaped_quote_in_the_path(self):
         no_jq = self.make_bin(pathlib.Path(self._tmp.name) / "no-jq-bin", with_jq=False)

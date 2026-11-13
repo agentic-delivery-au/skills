@@ -60,9 +60,10 @@ gives early feedback only; the repo's pre-commit and CI remain the gate.
 The hook says when it cannot run, and stays out of projects that are not uv projects:
 
 - Only a `uv.lock` at the project root (`$CLAUDE_PROJECT_DIR`, else the current directory) turns the
-  hook on. Without one it does nothing and exits 0, whatever the file, and needs no `jq`. Such a
-  project is not treated as a uv project, and `uv run` would otherwise create a lockfile and a
-  `.venv` there. A monorepo with uv projects only in subdirectories gets no lint from this hook.
+  hook on, and `uv run` runs from that root. Without one it does nothing and exits 0, whatever the
+  file, and needs no `jq`. Such a project is not treated as a uv project, and `uv run` would
+  otherwise create a lockfile and a `.venv` there. A monorepo with uv projects only in
+  subdirectories gets no lint from this hook.
 - In a project with a `uv.lock`, if `jq` is not on your PATH and the edited file is `.py` or `.pyi`,
   it prints one line to stderr and exits 1. That is a non-blocking error, which Claude Code shows,
   so a missing `jq` is not mistaken for a clean file. Other files are skipped silently.
