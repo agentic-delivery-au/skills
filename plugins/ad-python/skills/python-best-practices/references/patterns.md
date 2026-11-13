@@ -146,8 +146,9 @@ def recent(ids: Sequence[GrantId]) -> list[Grant]:
 ```
 
 Ruff's import sorting (`I`) finds the project's own package through its `src` directories.
-`known-first-party` in `pyproject.toml` is for a package that lookup misses, such as one installed
-into `.venv`: without it that package sorts with the third-party imports, and nothing reports it.
+`known-first-party` in `pyproject.toml`, which the [baseline](baseline.md) sets, is for a package
+that lookup misses, such as one installed into `.venv`: without it that package sorts with the
+third-party imports, and nothing reports it.
 
 ## Exceptions
 
@@ -295,7 +296,8 @@ is the same crash as no annotation at all, with the traceback moved somewhere le
 Testing doctrine is the **ad-general:test-driven-development** skill's: what a test is for and what
 you may mock. This section gives the pytest spelling, and the traps that are Python's alone. Its
 snippets follow the `tests/` exemption that `references/toolchain.md` records, so they carry no
-annotations and no docstrings, and they use `assert`.
+annotations and no docstrings on test modules, classes, methods or functions (the baseline exempts
+`D100` to `D103`), and they use `assert`.
 
 ### Patch the binding the code reaches
 
@@ -353,17 +355,19 @@ with pytest.raises(ValueError):
     link(grant.id, _UNKNOWN_DONOR)
 ```
 
-Pin the words that tell this error from every other one, not the whole sentence:
-`writing-good-tests.md` counts exact message wording as a change detector, and a `match=` carrying
-the full message fails on a reword that broke nothing. It is a regex searched against the message,
-so keep the fragment clear of metacharacters or wrap it in `re.escape`. Keep the block down to the
-call that raises, for the reason you keep a `try` body short.
+Pin the words that tell this error from every other one, not the whole sentence: the
+`ad-general:test-driven-development` skill's `references/writing-good-tests.md` counts exact message
+wording as a change detector, and a `match=` carrying the full message fails on a reword that broke
+nothing. It is a regex searched against the message, so keep the fragment clear of metacharacters or
+wrap it in `re.escape`. Keep the block down to the call that raises, for the reason you keep a `try`
+body short.
 
 ### `parametrize` is the table-driven shape
 
-`writing-good-tests.md` asks for table-driven tests with literal `want` values. You write that in
-pytest with `@pytest.mark.parametrize`: one row per case, each `want` worked out by hand, and every
-case running whatever the ones before it did.
+The `ad-general:test-driven-development` skill's `references/writing-good-tests.md` asks for
+table-driven tests with literal `want` values. You write that in pytest with
+`@pytest.mark.parametrize`: one row per case, each `want` worked out by hand, and every case running
+whatever the ones before it did.
 
 ```python
 # Yes

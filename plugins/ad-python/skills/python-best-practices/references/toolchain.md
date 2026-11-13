@@ -6,16 +6,18 @@ Commands, and what their output has to say before you claim a check passed.
 
 Read `pyproject.toml` for `[tool.ruff]` and `[tool.pyrefly]`, `.github/workflows/` for what CI runs,
 and `.pre-commit-config.yaml` for what runs locally. Run those, through the runner the project uses
-— `uv run …` where there is a `uv.lock`, otherwise whatever the workflow invokes.
+— `uv run …` where there is a `uv.lock`, otherwise whatever the workflow invokes. The `ad-python`
+lint hook follows the same rule: it runs only where a `uv.lock` exists.
 
 Do not create a `ruff.toml`, `.ruff.toml` or `setup.cfg`: configuration belongs in `pyproject.toml`
 and nowhere else. Do not pass `--select`, `--ignore` or `--config` to change which rules run,
-because then you have checked something other than what CI will check. This file carries no
-configuration on purpose; the project's `pyproject.toml` is the source of truth for what the config
-contains, and a copy here would go stale without anyone noticing.
+because then you have checked something other than what CI will check. The baseline configuration is
+in [baseline.md](baseline.md) and nowhere in this file; the project's `pyproject.toml` is the source
+of truth for what the project actually runs.
 
-A project with no `[tool.ruff]` at all is not configured yet. Set it up as its own change, rather
-than half-configuring it inside an unrelated one.
+A project with no `[tool.ruff]` at all is not configured yet. Set it up from
+[baseline.md](baseline.md) as its own change, rather than half-configuring it inside an unrelated
+one.
 
 ## The three checks
 
@@ -25,9 +27,9 @@ than half-configuring it inside an unrelated one.
 | `uv run ruff check .`          | `All checks passed!`, exit 0        | A block per finding, then `Found N errors.`, exit 1                                                        |
 | `uv run pyrefly check`         | `INFO 0 errors`, exit 0             | `ERROR <message> [error-kind]` per finding, then `INFO N errors`, exit 1                                   |
 
-Run Pyrefly with the path the project's gate passes, for example the template's `pyrefly check src`.
-A bare `pyrefly check` also checks `tests/` and `scripts/`, which that gate does not, so errors
-there are not the gate's.
+Run Pyrefly with the paths the project's gate passes. The gate in
+`agentic-delivery-au/python-simple-template` is `uv run --locked pyrefly check src scripts`. A bare
+`pyrefly check` also checks `tests/`, which that gate does not, so errors there are not the gate's.
 
 - **A formatting failure is fixed by running the formatter**, never by hand-editing whitespace to
   guess what it wanted. `ruff format` writes the files; re-run `--check` for the evidence.
@@ -66,17 +68,17 @@ Ruff code there suppresses nothing, and vice versa.
 
 ## What the gate does not catch
 
-Measured against the project's Ruff rule selection, with the versions it pins today. These rules are
-real, and the gate either misses them entirely or catches only part of them, so each needs its own
-probe. Where a rule covers part of the ground, the probe below looks for the residue it leaves, not
-for the whole rule:
+Measured against the [baseline](baseline.md)'s Ruff rule selection, with the versions it pins today.
+These rules are real, and the gate either misses them entirely or catches only part of them, so each
+needs its own probe. Where a rule covers part of the ground, the probe below looks for the residue
+it leaves, not for the whole rule:
 
 Each probe covers stubs as well as modules, so each carries both `--include` flags. Do not lift them
 into a shell variable: the quotes survive the expansion, the globs stop matching, and the probe
 returns nothing, which reads exactly like a clean result.
 
-- **A TODO that links an issue and then says more.** `TD003` is selected, so a TODO with no link
-  fails the build. It asks only whether a link is present, so `# TODO(alice): <url>` and
+- **A TODO that links an issue and then says more.** The baseline selects `TD003`, so a TODO with no
+  link fails the build. It asks only whether a link is present, so `# TODO(alice): <url>` and
   `# TODO: <url> and a description` both satisfy it and both break the rule, which wants the URL and
   nothing else.
   `grep -rnE "#\s*TODO" --include='*.py' --include='*.pyi' . | grep -vE "#\s*TODO: https://\S+$"`
@@ -84,13 +86,14 @@ returns nothing, which reads exactly like a clean result.
   `TD003` leaves. Match `#\s*TODO` rather than bare `TODO`, or prose in a docstring that happens to
   say TODO comes back as a finding. Excluding on `issues/` instead would hide
   `# TODO: <url> and a description`, which is half of what is left to find.
-- **A broad `except Exception` that keeps the traceback.** `BLE` is selected, so a handler that
-  discards the traceback fails the build. `BLE001` exempts a re-raise, a `logger.exception(...)`
-  call and `logger.error(..., exc_info=True)`, and cannot judge whether an exempt handler is
-  genuinely a re-raise or a deliberate isolation point — the only two the Google guide permits. A
-  handler that logs with `.exception()` and carries on regardless is still a violation and the gate
-  is silent on it. `grep -rn "except Exception" --include='*.py' --include='*.pyi' .` lists every
-  candidate; read each and keep the ones that neither re-raise nor sit at a boundary.
+- **A broad `except Exception` that keeps the traceback.** The baseline selects `BLE`, so a handler
+  that discards the traceback fails the build. `BLE001` exempts a re-raise, a
+  `logger.exception(...)` call and `logger.error(..., exc_info=True)`, and cannot judge whether an
+  exempt handler is genuinely a re-raise or a deliberate isolation point — the only two the Google
+  guide permits. A handler that logs with `.exception()` and carries on regardless is still a
+  violation and the gate is silent on it.
+  `grep -rn "except Exception" --include='*.py' --include='*.pyi' .` lists every candidate; read
+  each and keep the ones that neither re-raise nor sit at a boundary.
 - **Importing names rather than modules.** `from x import some_function` is not reported.
   `grep -rnE "^\s*from " --include='*.py' --include='*.pyi' .` lists candidates, not findings: the
   two forms are syntactically identical, so read each one and keep those importing a name. Match
@@ -158,12 +161,14 @@ callers. If the full run gets slow enough that people reach for `--no-verify`, m
 ## Tests
 
 Testing doctrine is the **ad-general:test-driven-development** skill's, not this one's. Tests are
-checked differently: `tests/**` is exempt from the `ANN` and docstring rules and may use `assert`.
-Where the gate scopes Pyrefly to the source path, as the template's `pyrefly check src` does, the
-gate does not type-check `tests/**` either. There the Pyrefly language server still reports errors
-on a test file you edit; those are not the gate's, so do not annotate tests just to silence them. A
-green run over a test file therefore proves less than a green run over a source file, so do not cite
-one as evidence about the other.
+checked differently: the baseline exempts `tests/**` (and `scripts/test_*.py`) from `ANN`, from the
+missing-docstring rules `D100` to `D103` (module, class, method and function), and from `S101`, so
+tests may use `assert`. The other docstring rules still apply to them. The template's gate runs
+`pyrefly check src scripts`, so it does not type-check `tests/**`, though it does check
+`scripts/test_*.py`. The Pyrefly language server still reports errors on a `tests/` file you edit;
+those are not the gate's, so do not annotate tests just to silence them. A green run over a test
+file therefore proves less than a green run over a source file, so do not cite one as evidence about
+the other.
 
 `references/patterns.md` § Tests carries the pytest probes for that doctrine: where to point a
 patch, what `pytest.raises` has to pin, and the table-driven shape.

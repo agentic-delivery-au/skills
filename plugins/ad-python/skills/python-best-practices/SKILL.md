@@ -8,7 +8,7 @@ description: "Python practices for Agentic Delivery: the decisions table, then t
 Three sources, most authoritative first. Where two disagree, the higher one wins outright.
 
 1. The decisions in "What Agentic Delivery decides" below. This is what a pull request is reviewed
-   against and what the project's Ruff and Pyrefly configuration enforces.
+   against and what the Ruff and Pyrefly baseline in `references/baseline.md` enforces.
 1. The [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html). The declared
    base: the decisions table is a list of deviations from Google, not from PEP 8.
 1. [PEP 8](https://peps.python.org/pep-0008/). The substrate both rest on, and the shared vocabulary
@@ -36,15 +36,16 @@ and the gate runs Pyrefly over its whole scope, not only the edited file.
 | Python version     | —                                                                  | 3.14 or later for new projects, declared once as `requires-python`, from which Ruff infers `target-version` so the two cannot drift. `match` where it aids clarity.                                                                                            |
 | Forward references | Google: `from __future__ import annotations`, or a quoted name.    | No `from __future__ import annotations`. PEP 649 deferred evaluation ships in 3.14, so the bare name works, and the import switches every annotation in the module back to a string (PEP 563). No Ruff rule reports the import; `UP037` reports a quoted name. |
 | Docstring shape    | Google: Args, Returns and Raises sections on anything non-trivial. | One line describing behaviour, where the signature explains itself. Annotations already state the types an Args block would repeat.                                                                                                                            |
-| TODO               | Google: `TODO`, a colon, a link, then a description.               | The issue URL and nothing else. Description and context belong in the issue, where someone can close them. The gate checks that a link is present, not that nothing follows it.                                                                                |
+| TODO               | Google: `TODO`, a colon, a link, then a description.               | The issue URL and nothing else. Description and context belong in the issue, where someone can close them. The baseline's `TD003` checks that a link is present, not that nothing follows it.                                                                  |
 | Toolchain          | Google: pylint, Black or Pyink, pytype.                            | Ruff for lint and format, Pyrefly for types, pinned as dev dependencies, configured in `pyproject.toml` and nowhere else. Do not add flake8, isort, Black, mypy or pylint; each overlaps or conflicts with the two above.                                      |
 | Suppressions       | —                                                                  | Name the code and say why: `# noqa: ANN001  # signature fixed by the SDK`. A bare `# noqa` or a file-level `# ruff: noqa` hides every future violation too. Pyrefly's own form is `# pyrefly: ignore[bad-return]`, carrying a Pyrefly error kind.              |
 | Unused arguments   | —                                                                  | Rename to `_name` rather than suppress `ARG`: Ruff's `dummy-variable-rgx` matches it and the name says the parameter is ignored on purpose. Delete it if no caller passes it. For a pytest fixture wanted only for its side effect, use `usefixtures`.         |
 | `staticmethod`     | Google: never, unless a library API forces it.                     | No restriction. Google's reason is large-scale dependency injection, which does not apply at this size.                                                                                                                                                        |
 
-Never drop a selected Ruff rule, loosen the Pyrefly preset, turn off a Pyrefly error kind such as
-the `implicit-any` family, or widen an exclude to make existing code pass. Changing any of those is
-a change to these decisions, so argue for it in a pull request against this skill rather than
+Never drop a rule the baseline selects, loosen its Pyrefly preset, turn off a Pyrefly error kind
+such as the `implicit-any` family, or widen an exclude to make existing code pass. Changing any of
+those is a change to these decisions, and the selection and the preset live in
+`references/baseline.md`, so argue for the change in a pull request against that file rather than
 quietly in a project config. Selecting extra rules on top is fine.
 
 ## The base, where an agent's default is wrong
@@ -79,5 +80,9 @@ From the principle skills, in Python syntax.
 | Parse at the boundary          | HTTP payloads, JSON, database rows, environment variables and CLI arguments are untyped until a parse function turns them into a declared type. Do not re-validate inside. |
 | Strengthen only where partial  | Keep the plain `list[T]` while every operation on it is total. Tighten the type only where the loose one forces a `cast`, an `assert` or a "cannot happen" raise.          |
 
-Examples: `references/patterns.md`. Commands, and the output each has to produce:
-`references/toolchain.md`.
+References:
+
+- `references/baseline.md`: the Ruff and Pyrefly configuration these decisions rest on, to copy into
+  a project's `pyproject.toml`.
+- `references/toolchain.md`: commands, and the output each has to produce.
+- `references/patterns.md`: examples.
