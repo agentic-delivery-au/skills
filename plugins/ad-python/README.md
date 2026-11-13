@@ -48,8 +48,8 @@ The language server gives early feedback only. The repo's pre-commit and CI rema
 A `PostToolUse` hook on `Write`, `Edit` and `MultiEdit` runs `uv run ruff check --force-exclude` on
 each `.py` or `.pyi` file Claude writes, so files the project's ruff config excludes are skipped. If
 ruff finds anything, the hook exits 2 with the findings on stderr, so Claude fixes them in the same
-turn. It never touches your source: no `--fix`, no `ruff format`. Like any `uv run`, it may create
-or update `uv.lock` and the project's `.venv`.
+turn. It never touches your source: no `--fix`, no `ruff format`. Like any `uv run`, it may update
+`uv.lock` and create or update the project's `.venv`.
 
 It needs `jq` and `uv` on your PATH, and ruff in the project, for example `uv add --dev ruff`.
 Without it, `uv run` falls back to a ruff on your PATH, whose version and rules may differ from the

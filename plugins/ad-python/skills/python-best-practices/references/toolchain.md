@@ -163,12 +163,12 @@ callers. If the full run gets slow enough that people reach for `--no-verify`, m
 Testing doctrine is the **ad-general:test-driven-development** skill's, not this one's. Tests are
 checked differently: the baseline exempts `tests/**` (and `scripts/test_*.py`) from `ANN`, from the
 missing-docstring rules `D100` to `D103` (module, class, method and function), and from `S101`, so
-tests may use `assert`. The other docstring rules still apply to them. The template's gate runs
-`pyrefly check src scripts`, so it does not type-check `tests/**`, though it does check
-`scripts/test_*.py`. The Pyrefly language server still reports errors on a `tests/` file you edit;
-those are not the gate's, so do not annotate tests just to silence them. A green run over a test
-file therefore proves less than a green run over a source file, so do not cite one as evidence about
-the other.
+tests may use `assert`. The other docstring rules still apply to them.
+`agentic-delivery-au/python-simple-template`'s gate runs `pyrefly check src scripts`, so it does not
+type-check `tests/**`, though it does check `scripts/test_*.py`. The Pyrefly language server still
+reports errors on a `tests/` file you edit; those are not the gate's, so do not annotate tests just
+to silence them. A green run over a test file therefore proves less than a green run over a source
+file, so do not cite one as evidence about the other.
 
 `references/patterns.md` § Tests carries the pytest probes for that doctrine: where to point a
 patch, what `pytest.raises` has to pin, and the table-driven shape.
