@@ -98,6 +98,12 @@ class LintOnEditTest(unittest.TestCase):
         self.assertIn("jq is not on PATH", result.stderr)
         self.assertEqual(self.uv_calls(), [])
 
+    def test_a_missing_jq_reads_an_escaped_quote_in_the_path(self):
+        no_jq = self.make_bin(pathlib.Path(self._tmp.name) / "no-jq-bin", with_jq=False)
+        result = self.run_hook('a"b.py', bin_dir=no_jq)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("jq is not on PATH", result.stderr)
+
     def test_a_missing_jq_and_no_uv_lock_exits_0_silently(self):
         no_jq = self.make_bin(pathlib.Path(self._tmp.name) / "no-jq-bin", with_jq=False)
         bare = pathlib.Path(self._tmp.name) / "bare"

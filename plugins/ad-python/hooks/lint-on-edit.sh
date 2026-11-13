@@ -9,7 +9,7 @@ if command -v jq >/dev/null 2>&1; then
 else
   # Without jq, pull file_path out of the JSON by pattern, only to decide the extension.
   file=
-  pattern='"file_path"[[:space:]]*:[[:space:]]*"([^"]*)"'
+  pattern='"file_path"[[:space:]]*:[[:space:]]*"((\\.|[^"\\])*)"'
   [[ $input =~ $pattern ]] && file=${BASH_REMATCH[1]}
 fi
 case "$file" in
