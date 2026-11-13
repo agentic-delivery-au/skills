@@ -98,6 +98,20 @@ class LintOnEditTest(unittest.TestCase):
         self.assertIn("jq is not on PATH", result.stderr)
         self.assertEqual(self.uv_calls(), [])
 
+    def test_a_missing_jq_and_no_uv_lock_exits_0_silently(self):
+        no_jq = self.make_bin(pathlib.Path(self._tmp.name) / "no-jq-bin", with_jq=False)
+        bare = pathlib.Path(self._tmp.name) / "bare"
+        bare.mkdir()
+        result = self.run_hook("mod.py", bin_dir=no_jq, project=bare, STUB_FINDINGS="1")
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(self.uv_calls(), [])
+
+    def test_a_missing_jq_and_a_non_python_file_exits_0_silently(self):
+        no_jq = self.make_bin(pathlib.Path(self._tmp.name) / "no-jq-bin", with_jq=False)
+        result = self.run_hook("notes.md", bin_dir=no_jq, STUB_FINDINGS="1")
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(self.uv_calls(), [])
+
     def test_a_project_without_uv_lock_exits_0_and_never_calls_uv(self):
         bare = pathlib.Path(self._tmp.name) / "bare"
         bare.mkdir()

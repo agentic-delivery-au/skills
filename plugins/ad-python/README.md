@@ -22,7 +22,8 @@ environment has. Claude gets two things from it:
   hierarchy, so Claude navigates by the type checker rather than by text search.
 
 Add pyrefly to the project, for example `uv add --dev pyrefly`. Without it the server does not
-start.
+start. The server runs `uv run` in any project, so in a project with a `pyproject.toml` and no
+`uv.lock` it may create `uv.lock` and `.venv`.
 
 Only one language server can handle `.py` files. When two enabled servers claim an extension, the
 first registered one wins and the other is not used for it. The official `pyright-lsp` plugin also
@@ -58,8 +59,10 @@ gives early feedback only; the repo's pre-commit and CI remain the gate.
 
 The hook says when it cannot run, and stays out of projects that are not uv projects:
 
-- If `jq` is not on your PATH, it prints one line to stderr and exits 1. That is a non-blocking
-  error, which Claude Code shows, so a missing `jq` is not mistaken for a clean file.
-- If there is no `uv.lock` in the project directory (`$CLAUDE_PROJECT_DIR`, else the current
-  directory), it does nothing and exits 0. Such a project is not run through uv, and `uv run` would
-  otherwise create a lockfile and a `.venv` there.
+- Only a `uv.lock` at the project root (`$CLAUDE_PROJECT_DIR`, else the current directory) turns the
+  hook on. Without one it does nothing and exits 0, whatever the file, and needs no `jq`. Such a
+  project is not treated as a uv project, and `uv run` would otherwise create a lockfile and a
+  `.venv` there. A monorepo with uv projects only in subdirectories gets no lint from this hook.
+- In a project with a `uv.lock`, if `jq` is not on your PATH and the edited file is `.py` or `.pyi`,
+  it prints one line to stderr and exits 1. That is a non-blocking error, which Claude Code shows,
+  so a missing `jq` is not mistaken for a clean file. Other files are skipped silently.
