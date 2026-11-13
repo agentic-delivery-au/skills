@@ -58,13 +58,13 @@ having.
 # Yes
 # TODO: https://github.com/agentic-delivery-au/myrepo/issues/42
 
-# No: the gate passes both, because each carries a link.
+# No: the baseline's `TD003` passes both, because each carries a link.
 # TODO: https://github.com/agentic-delivery-au/myrepo/issues/42 handle the retry case
 # TODO(alice): https://github.com/agentic-delivery-au/myrepo/issues/42
 ```
 
-The description belongs in the issue, where it can be tracked and closed. The gate checks that a
-link is present, not that nothing follows it.
+The description belongs in the issue, where it can be tracked and closed. The
+[baseline](baseline.md)'s `TD003` checks that a link is present, not that nothing follows it.
 
 ## Suppressions
 

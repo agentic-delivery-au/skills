@@ -13,7 +13,7 @@ change here.
 line-length = 100
 # target-version is inferred from requires-python.
 # scripts/ must run on Python 3.10, and Ruff checks the syntax for that.
-# The 3.10 bootstrap-repo-tests hook catches 3.11+ stdlib use in the code the tests execute.
+# In python-simple-template, the 3.10 bootstrap-repo-tests hook catches 3.11+ stdlib use in the code the tests execute.
 per-file-target-version = { "scripts/**" = "py310" }
 
 [tool.ruff.lint]
@@ -56,8 +56,9 @@ quote-style = "double"
 [tool.pyrefly]
 python-version = "3.14"
 preset = "strict"
-# No project-excludes: the hook names the paths to check; see README.
-# search-path: scripts for the tests' bootstrap_repo import, src because naming it drops the root.
+# No project-excludes: in python-simple-template, the hook names the paths to check; see its README.
+# search-path: in python-simple-template, scripts is for the tests' bootstrap_repo import; src is
+# because naming it drops the root.
 search-path = ["src", "scripts"]
 
 # Leave empty and the preset decides. Add an entry only to record a deliberate

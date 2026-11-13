@@ -68,7 +68,7 @@ Ruff code there suppresses nothing, and vice versa.
 
 ## What the gate does not catch
 
-Measured against the [baseline](baseline.md)'s Ruff rule selection, with the versions it pins today.
+Measured against the [baseline](baseline.md)'s Ruff rule selection; re-check after upgrading Ruff.
 These rules are real, and the gate either misses them entirely or catches only part of them, so each
 needs its own probe. Where a rule covers part of the ground, the probe below looks for the residue
 it leaves, not for the whole rule:
