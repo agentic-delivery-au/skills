@@ -55,3 +55,11 @@ It needs `jq` and `uv` on your PATH, and ruff in the project, for example `uv ad
 Without it, `uv run` falls back to a ruff on your PATH, whose version and rules may differ from the
 gate's, or, with none, Claude sees uv's error after each Python edit instead of findings. The hook
 gives early feedback only; the repo's pre-commit and CI remain the gate.
+
+The hook says when it cannot run, and stays out of projects that are not uv projects:
+
+- If `jq` is not on your PATH, it prints one line to stderr and exits 1. That is a non-blocking
+  error, which Claude Code shows, so a missing `jq` is not mistaken for a clean file.
+- If there is no `uv.lock` in the project directory (`$CLAUDE_PROJECT_DIR`, else the current
+  directory), it does nothing and exits 0. Such a project is not run through uv, and `uv run` would
+  otherwise create a lockfile and a `.venv` there.
