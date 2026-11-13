@@ -114,7 +114,19 @@ class LintOnEditTest(unittest.TestCase):
                 self.assertEqual((result.returncode, result.stderr), (0, ""))
                 pwd = pathlib.Path(self.log.with_name("uv.log.pwd").read_text().strip())
                 self.assertEqual(pwd.resolve(), self.project.resolve())
-                self.assertTrue(self.uv_calls()[0].endswith(f" {expected}"))
+                arg = self.uv_calls()[0].rsplit(" ", 1)[1]
+                self.assertEqual(pathlib.Path(arg).resolve(), expected.resolve())
+
+    def test_cd_to_the_root_ignores_cdpath(self):
+        base = pathlib.Path(self._tmp.name) / "base"
+        (base / "proj").mkdir(parents=True)
+        (base / "proj" / "uv.lock").write_text("", encoding="utf-8")
+        decoy = pathlib.Path(self._tmp.name) / "decoy"
+        (decoy / "proj").mkdir(parents=True)
+        result = self.run_hook("mod.py", project="proj", cwd=base, CDPATH=str(decoy))
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        pwd = pathlib.Path(self.log.with_name("uv.log.pwd").read_text().strip())
+        self.assertEqual(pwd.resolve(), (base / "proj").resolve())
 
     def test_a_missing_jq_reads_an_escaped_quote_in_the_path(self):
         no_jq = self.make_bin(pathlib.Path(self._tmp.name) / "no-jq-bin", with_jq=False)

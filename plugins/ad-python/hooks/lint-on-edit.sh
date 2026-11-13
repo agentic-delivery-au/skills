@@ -27,7 +27,10 @@ case "$file" in
   /*) ;;
   *) file=$orig/$file ;;
 esac
-cd "$root" || exit 0
+if ! CDPATH= cd -- "$root"; then
+  echo "ad-python lint hook: could not enter $root, so ruff did not check the edited file." >&2
+  exit 1
+fi
 out=$(uv run ruff check --force-exclude --output-format concise "$file" 2>&1) && exit 0
 printf '%s\n' "$out" >&2
 exit 2
