@@ -101,13 +101,16 @@ returns nothing, which reads exactly like a clean result.
   `from . import x` lines slip past. Allow the leading whitespace too, or you miss every import
   deferred inside a function or an `if TYPE_CHECKING:` block. Discard the `typing`,
   `collections.abc` and `typing_extensions` hits, which are the exemption.
-- **An unneeded `from __future__ import annotations`.** No rule reports it on 3.14, and it turns
-  every annotation in the module back into a string (PEP 563).
-  `grep -rn "^from __future__ import" --include='*.py' --include='*.pyi' .` — read each hit and
-  remove `annotations` from it, deleting the line if it was the only feature, in a new project. A
-  hit can name several features, as in `from __future__ import division, annotations`, which is why
-  the probe does not match on `annotations`. It stays anchored to column 0 on purpose: an indented
-  future statement is a `SyntaxError`, so anchoring misses nothing.
+- **An unneeded `from __future__ import annotations`.** No rule reports it, and on 3.14 or later it
+  turns every annotation in the module back into a string (PEP 563). Only code targeting 3.14 or
+  later is in scope: code targeting an earlier version, such as the baseline's `scripts/**` at
+  py310, needs the import or a quoted name, so leave it there.
+  `grep -rn "^from __future__ import" --include='*.py' --include='*.pyi' .` — read each hit, skip
+  files targeting an earlier version, and remove `annotations` from the rest, deleting the line if
+  it was the only feature, in a new project. A hit can name several features, as in
+  `from __future__ import division, annotations`, which is why the probe does not match on
+  `annotations`. It stays anchored to column 0 on purpose: an indented future statement is a
+  `SyntaxError`, so anchoring misses nothing.
 
 If one of these keeps coming back, the answer is a rule, not a reminder: see the
 **ad-general:principle-encode-lessons-in-structure** principle skill. Selecting extra rules on top

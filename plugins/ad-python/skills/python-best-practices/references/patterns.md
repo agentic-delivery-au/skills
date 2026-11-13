@@ -30,9 +30,14 @@ caller has to handle, or a `Returns:` explaining what an opaque value means.
 
 ## No `__future__` import
 
-New projects target 3.14 or later, where deferred annotation evaluation (PEP 649) makes forward
-references work unquoted. The `from __future__ import annotations` import is no longer needed, and
-it switches every annotation in the module back to a string (PEP 563). No Ruff rule reports it.
+Code targeting 3.14 or later, which is every new project's default, gets deferred annotation
+evaluation (PEP 649), so forward references work unquoted. There the
+`from __future__ import annotations` import is no longer needed, and it switches every annotation in
+the module back to a string (PEP 563). No Ruff rule reports it.
+
+Code targeting an earlier version, such as the baseline's `scripts/**` at py310, has no deferred
+evaluation: removing the import turns a bare forward reference into a `NameError` at import. Keep
+the import there, or quote the name.
 
 ```python
 # Yes: the bare name works, though `Node` is not yet defined inside its own class.
@@ -43,7 +48,7 @@ class Node:
         """Return the node above this one, or None at the root."""
 
 
-# No: an import 3.14 made unnecessary.
+# No, in 3.14 code: an import 3.14 made unnecessary.
 from __future__ import annotations
 ```
 
