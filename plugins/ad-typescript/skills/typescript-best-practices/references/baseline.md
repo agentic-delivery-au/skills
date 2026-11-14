@@ -2,13 +2,17 @@
 
 This is Agentic Delivery's baseline ESLint and TypeScript configuration, taken from
 [`agentic-delivery-au/typescript-simple-template`](https://github.com/agentic-delivery-au/typescript-simple-template),
-for a project to copy. Change the project-specific values (the Next.js plugin block, the `paths`
-alias, `include`, `jsx`, `lib` and `module` if the project is not a Next.js app) to the project's
-own and leave the rest. The statements in `SKILL.md` and `patterns.md` about `no-console`, the
-suppression rules, `no-explicit-any` and the `no-unsafe-*` rules, the `_exhaustive` local, `strict`
-and Prettier are claims about these files; a change to the rule selection or the compiler options is
-a change here. Comments in the template that cite an engineering standard outside this repository
-are reworded below.
+for a project to copy. Change the project-specific values to the project's own and leave the rest.
+For a project that is not a Next.js app, those are the Next.js plugin block in `eslint.config.mjs`,
+and in `tsconfig.json` the `paths` alias, `include`, `jsx`, `lib` and `module`, plus three that
+depend on them: `moduleResolution` must pair with `module` (for a Node project, `NodeNext` with
+`NodeNext`; leaving `bundler` beside `NodeNext` fails `tsc`); `noEmit` stays `true` only when the
+build is not `tsc` (for a `tsc` build, remove it); and the `plugins` entry `{ "name": "next" }`,
+which names a package the project does not install, goes. The statements in `SKILL.md` and
+`patterns.md` about `no-console`, the suppression rules, `no-explicit-any` and the `no-unsafe-*`
+rules, the `_exhaustive` local, `strict` and Prettier are claims about these files; a change to the
+rule selection or the compiler options is a change here. Comments in the template that cite an
+engineering standard outside this repository are reworded below.
 
 ## `eslint.config.mjs`
 
