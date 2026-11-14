@@ -275,6 +275,17 @@ class TsLintOnEditTest(unittest.TestCase):
         link.symlink_to(self.project)
         self.assert_linted(self.run_hook(link / "mod.ts"))
 
+    def test_a_file_reached_through_an_outside_symlink_into_the_project_gets_its_real_path(self):
+        # ESLint finds its config from the file's directory, so it must get the in-project path.
+        src = self.project / "src"
+        src.mkdir()
+        link = self.tmp / "s"
+        link.symlink_to(src)
+        self.assert_linted(self.run_hook(link / "a.ts"))
+        self.assertEqual(
+            pathlib.Path(self.npx_calls()[0].split()[-1]), (src / "a.ts").resolve()
+        )
+
     def test_a_path_with_spaces_is_linted(self):
         spaced = self.project / "my dir"
         spaced.mkdir()

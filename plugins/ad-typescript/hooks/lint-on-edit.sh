@@ -25,9 +25,10 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 # A file is in the project when its path as given, made absolute, is under the root as given, or
-# when its physical path is under the physical root. Either way ESLint gets the logical path, so a
-# directory in the project that is a symlink pointing outside it is still linted. A logical path with
-# a `..` segment is not trusted, because the prefix test cannot see where it leads.
+# when its physical path is under the physical root. ESLint finds its config from the file's
+# directory, so it gets whichever path is in the project: the path as given (an in-project symlink
+# pointing outside is still linted), else the physical path. A logical path with a `..` segment is
+# not trusted, because the prefix test cannot see where it leads.
 case "$file" in
   /*) ;;
   *) file=$orig/$file ;;
@@ -48,10 +49,11 @@ case "$file/" in
   */../*) logical= ;;
   *) logical=1 ;;
 esac
-case "${dir%/}/${file##*/}" in
-  "$prefix"*) ;;
-  *) case "$logical$file" in
-       1"$lprefix"*) ;;
+phys=${dir%/}/${file##*/}
+case "$logical$file" in
+  1"$lprefix"*) ;;
+  *) case "$phys" in
+       "$prefix"*) file=$phys ;;
        *) exit 0 ;;
      esac ;;
 esac
