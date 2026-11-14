@@ -47,11 +47,12 @@ The language server gives early feedback only. The repo's pre-commit and CI rema
 ## The ruff hook
 
 A `PostToolUse` hook on `Write`, `Edit` and `MultiEdit` runs
-`uv run ruff check --no-fix --force-exclude` on each `.py` or `.pyi` file Claude writes, so files
-the project's ruff config excludes are skipped. If ruff finds anything, the hook exits 2 with the
-findings on stderr, so Claude fixes them in the same turn. It never touches your source: `--no-fix`
-overrides a `fix = true` in the project's ruff config, and it runs no `ruff format`. Like any
-`uv run`, it may update `uv.lock` and create or update the project's `.venv`.
+`uv run ruff check --no-fix --no-fix-only --force-exclude` on each `.py` or `.pyi` file Claude
+writes, so files the project's ruff config excludes are skipped. If ruff finds anything, the hook
+exits 2 with the findings on stderr, so Claude fixes them in the same turn. It never touches your
+source: `--no-fix` and `--no-fix-only` override a `fix = true` or `fix-only = true` in the project's
+ruff config, and it runs no `ruff format`. Like any `uv run`, it may update `uv.lock` and create or
+update the project's `.venv`.
 
 It needs `jq` and `uv` on your PATH, and ruff in the project, for example `uv add --dev ruff`.
 Without it, `uv run` falls back to a ruff on your PATH, whose version and rules may differ from the

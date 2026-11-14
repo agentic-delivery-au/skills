@@ -91,7 +91,7 @@ class LintOnEditTest(unittest.TestCase):
         self.run_hook("mod.py", STUB_FINDINGS="1")
         self.assertEqual(
             self.uv_calls(),
-            [f"run ruff check --no-fix --force-exclude --output-format concise {pathlib.Path.cwd()}/mod.py"],
+            [f"run ruff check --no-fix --no-fix-only --force-exclude --output-format concise {pathlib.Path.cwd()}/mod.py"],
         )
 
     def test_a_missing_jq_exits_1_and_says_so_on_stderr(self):
