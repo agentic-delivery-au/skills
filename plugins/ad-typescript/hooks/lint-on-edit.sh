@@ -39,6 +39,13 @@ case "$lroot" in
   *) lroot=$orig/$lroot ;;
 esac
 while [ "${lroot%/}" != "$lroot" ]; do lroot=${lroot%/}; done
+# Dot segments are collapsed in both logical paths (`/./` and a trailing `/.`), without resolving
+# symlinks or `..`, so `.` or `./project` as the root still prefixes an absolute file path.
+while [[ $lroot == *"/./"* ]]; do lroot=${lroot//\/.\//\/}; done
+while [[ $file == *"/./"* ]]; do file=${file//\/.\//\/}; done
+while [ "${lroot%/.}" != "$lroot" ]; do lroot=${lroot%/.}; done
+while [ "${file%/.}" != "$file" ]; do file=${file%/.}; done
+while [ "${lroot%/}" != "$lroot" ]; do lroot=${lroot%/}; done
 # The file's directory must exist. ESLint 10 errors on a file outside every config, such as a
 # scratch file in /tmp, so that is skipped.
 dir=${file%/*}

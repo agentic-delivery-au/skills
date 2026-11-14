@@ -270,6 +270,30 @@ class TsLintOnEditTest(unittest.TestCase):
                     ],
                 )
 
+    def test_a_root_with_dot_segments_still_matches_an_absolute_file_path(self):
+        shared = self.tmp / "shared-lib"
+        shared.mkdir()
+        (self.project / "shared").symlink_to(shared)
+        for root, cwd in (
+            (".", self.project),
+            ("./project", self.tmp),
+            ("./", self.project),
+            (f"{self.tmp}/./project/.", self.tmp),
+        ):
+            with self.subTest(root=root):
+                self.log.unlink(missing_ok=True)
+                result = self.run_hook(
+                    self.project / "shared" / "x.ts", project=root, cwd=cwd, STUB_FINDINGS="1"
+                )
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(
+                    self.npx_calls(),
+                    [
+                        "--no-install eslint --max-warnings 0 --no-warn-ignored "
+                        f"{self.project}/shared/x.ts"
+                    ],
+                )
+
     def test_a_file_reached_through_an_outside_symlink_to_the_project_is_linted(self):
         link = self.tmp / "link"
         link.symlink_to(self.project)
