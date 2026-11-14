@@ -22,6 +22,11 @@
       "description": "Python practices: a best-practices skill, a pyrefly language server and a ruff hook."
     },
     {
+      "name": "ad-typescript",
+      "source": "./plugins/ad-typescript",
+      "description": "TypeScript practices: a best-practices skill, a TypeScript language server and an ESLint hook."
+    },
+    {
       "name": "ad-vendor",
       "source": "./plugins/ad-vendor",
       "description": "Skills written elsewhere, vendored here with their own licences and provenance."
