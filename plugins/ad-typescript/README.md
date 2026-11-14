@@ -80,9 +80,8 @@ The hook says when it cannot run, and stays out of projects that are not Node pr
   project, it prints one line to stderr and exits 1, so a missing `npx` is not mistaken for a clean
   file.
 
-The hook has no "could not enter the project root" outcome in practice: it resolves the root by
-entering it, so a root it cannot enter is skipped as not a project. The script keeps a guard on the
-final `cd` that exits 1, but it is unreachable short of the directory changing mid-run.
+A root the hook cannot enter is skipped as not a project, because the hook resolves the root by
+entering it.
 
 `--no-warn-ignored` needs flat config: ESLint 9 or later, or ESLint 8.57 or later with an
 `eslint.config.*` file. On an older ESLint, or one using `.eslintrc.*`, ESLint rejects the option,
