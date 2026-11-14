@@ -7,12 +7,17 @@ For a project that is not a Next.js app, those are the Next.js plugin block in `
 and in `tsconfig.json` the `paths` alias, `include`, `jsx`, `lib` and `module`, plus three that
 depend on them: `moduleResolution` must pair with `module` (for a Node project, `NodeNext` with
 `NodeNext`; leaving `bundler` beside `NodeNext` fails `tsc`); `noEmit` stays `true` only when the
-build is not `tsc` (for a `tsc` build, remove it); and the `plugins` entry `{ "name": "next" }`,
-which names a package the project does not install, goes. The statements in `SKILL.md` and
-`patterns.md` about `no-console`, the suppression rules, `no-explicit-any` and the `no-unsafe-*`
-rules, the `_exhaustive` local, `strict` and Prettier are claims about these files; a change to the
-rule selection or the compiler options is a change here. Comments in the template that cite an
-engineering standard outside this repository are reworded below.
+build is not `tsc` (for a `tsc` build, replace it with an `outDir`, which TypeScript 6 wants paired
+with an explicit `rootDir`, and keep the `tsbuildinfo` file out of the project root, which `outDir`
+does by itself or `tsBuildInfoFile` does); and the `plugins` entry `{ "name": "next" }`, which names
+a package the project does not install, goes. `verbatimModuleSyntax: true` with `NodeNext` also
+needs `"type": "module"` in `package.json`: a CommonJS package either adds that or sets
+`verbatimModuleSyntax` to `false`, or `tsc` rejects every `import` and `export` in it. The
+statements in `SKILL.md` and `patterns.md` about `no-console`, the suppression rules,
+`no-explicit-any` and the `no-unsafe-*` rules, the `_exhaustive` local, `strict` and Prettier are
+claims about these files; a change to the rule selection or the compiler options is a change here.
+Comments in the template that cite an engineering standard outside this repository are reworded
+below.
 
 ## `eslint.config.mjs`
 
