@@ -5,6 +5,7 @@
     "email": "hello@agenticdelivery.com.au"
   },
   "description": "Skills for AI-assisted software development, grouped by what you are working on.",
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
   "plugins": [
     {
       "name": "ad-general",
