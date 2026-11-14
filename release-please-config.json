@@ -40,6 +40,19 @@
       ],
       "initial-version": "0.1.0",
       "bump-minor-pre-major": true
+    },
+    "plugins/ad-python": {
+      "release-type": "simple",
+      "component": "ad-python",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": ".claude-plugin/plugin.json",
+          "jsonpath": "$.version"
+        }
+      ],
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true
     }
   }
 }

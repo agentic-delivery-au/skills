@@ -1,0 +1,7 @@
+{
+  "pyrefly": {
+    "command": "uv",
+    "args": ["run", "pyrefly", "lsp"],
+    "extensionToLanguage": { ".py": "python", ".pyi": "python" }
+  }
+}

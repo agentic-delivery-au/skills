@@ -17,6 +17,11 @@
       "description": "Defining what to build and why: requirements, user stories, and the documents that carry them."
     },
     {
+      "name": "ad-python",
+      "source": "./plugins/ad-python",
+      "description": "Python practices: a best-practices skill, a pyrefly language server and a ruff hook."
+    },
+    {
       "name": "ad-vendor",
       "source": "./plugins/ad-vendor",
       "description": "Skills written elsewhere, vendored here with their own licences and provenance."
