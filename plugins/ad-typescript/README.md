@@ -61,24 +61,28 @@ The hook gives early feedback only; the repo's pre-commit and CI remain the gate
 
 The hook says when it cannot run, and stays out of projects that are not Node projects:
 
-- The project root (`$CLAUDE_PROJECT_DIR`, else the current directory) is resolved once to an
-  absolute physical path, so a relative or trailing-slash `$CLAUDE_PROJECT_DIR` and symlinks in the
-  root or the edited file's path all work. A root that does not exist is not a project. Only a
-  `package.json` at that root turns the hook on, and npx runs from it. Without one it does nothing
-  and exits 0, whatever the file, and needs no `jq`. A monorepo with `package.json` files only in
-  subdirectories gets no lint from this hook, and in one that installs ESLint only in a package, a
-  root `package.json` makes npx report that it cannot find ESLint after each edit.
-- The edited file is resolved the same way: a relative path is read against the directory Claude was
-  running in, then its directory is resolved physically, so `..` and symlinks are followed. A file
-  outside the project root, such as a scratch file in `/tmp`, or in a directory that does not exist,
-  is skipped, because ESLint 10 would fail it for having no config.
+- The project root (`$CLAUDE_PROJECT_DIR`, else the current directory) is resolved to an absolute
+  physical path, so a relative or trailing-slash `$CLAUDE_PROJECT_DIR` and a symlinked root both
+  work. A root that does not exist is not a project. Only a `package.json` at that root turns the
+  hook on, and npx runs from it. Without one it does nothing and exits 0, whatever the file, and
+  needs no `jq`. A monorepo with `package.json` files only in subdirectories gets no lint from this
+  hook, and in one that installs ESLint only in a package, a root `package.json` makes npx report
+  that it cannot find ESLint after each edit.
+- The edited file counts as in the project when either its path as given, made absolute against the
+  directory Claude was running in, is under the root as given (also made absolute, trailing slashes
+  stripped), or its physical path (its directory resolved with symlinks followed, plus its name) is
+  under the physical root. So a directory in the project that is a symlink pointing outside it is
+  still linted, and so is a file reached through a symlink to the project. A path with a `..`
+  segment only counts by its physical path. ESLint is given the absolute path as given. A file in
+  neither case, such as a scratch file in `/tmp`, or in a directory that does not exist, is skipped,
+  because ESLint 10 would fail it for having no config.
 - In a project with a `package.json`, if `jq` is not on your PATH and the edited file is one of the
   extensions above, it prints one line to stderr and exits 1. That is a non-blocking error, which
   Claude Code shows, so a missing `jq` is not mistaken for a clean file. Other files are skipped
   silently.
-- In a project with a `package.json`, if `npx` is not on your PATH and the edited file is in the
-  project, it prints one line to stderr and exits 1, so a missing `npx` is not mistaken for a clean
-  file.
+- In a project with a `package.json`, if `npx` is not on your PATH, the edited file has one of the
+  extensions above, `jq` is present, and the file is in the project (as defined above), it prints
+  one line to stderr and exits 1, so a missing `npx` is not mistaken for a clean file.
 
 A root the hook cannot enter is skipped as not a project, because the hook resolves the root by
 entering it.

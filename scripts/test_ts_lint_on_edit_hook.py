@@ -26,10 +26,9 @@ exit 1
 """
 
 BASH, JQ = shutil.which("bash"), shutil.which("jq")
-DIRNAME, BASENAME = shutil.which("dirname"), shutil.which("basename")
 
 
-@unittest.skipUnless(BASH and JQ and DIRNAME and BASENAME, "needs bash, jq, dirname and basename")
+@unittest.skipUnless(BASH and JQ, "needs bash and jq")
 class TsLintOnEditTest(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -45,8 +44,7 @@ class TsLintOnEditTest(unittest.TestCase):
     def make_bin(bin_dir, *, with_jq, with_npx=True):
         """A PATH holding only what the hook uses, the fake npx, and jq if asked."""
         bin_dir.mkdir()
-        for name, target in (("bash", BASH), ("dirname", DIRNAME), ("basename", BASENAME)):
-            (bin_dir / name).symlink_to(target)
+        (bin_dir / "bash").symlink_to(BASH)
         if with_jq:
             (bin_dir / "jq").symlink_to(JQ)
         if with_npx:
@@ -121,7 +119,7 @@ class TsLintOnEditTest(unittest.TestCase):
         self.run_hook(self.project / "mod.ts", STUB_FINDINGS="1")
         self.assertEqual(
             self.npx_calls(),
-            [f"--no-install eslint --max-warnings 0 --no-warn-ignored {self.project.resolve()}/mod.ts"],
+            [f"--no-install eslint --max-warnings 0 --no-warn-ignored {self.project}/mod.ts"],
         )
 
     def test_a_missing_jq_exits_1_and_says_so_on_stderr(self):
@@ -251,6 +249,56 @@ class TsLintOnEditTest(unittest.TestCase):
         inside = self.run_hook(self.project / "src" / "mod.ts", cwd=elsewhere, STUB_FINDINGS="1")
         self.assertEqual(inside.returncode, 2)
         self.assertEqual(len(self.npx_calls()), 1)
+
+    def test_a_directory_in_the_project_symlinked_outside_it_is_linted_by_its_logical_path(self):
+        shared = self.tmp / "shared-lib"
+        shared.mkdir()
+        (self.project / "shared").symlink_to(shared)
+        for file, cwd in (
+            (self.project / "shared" / "x.ts", None),
+            ("shared/x.ts", self.project),
+        ):
+            with self.subTest(file=str(file)):
+                self.log.unlink(missing_ok=True)
+                result = self.run_hook(file, cwd=cwd, STUB_FINDINGS="1")
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(
+                    self.npx_calls(),
+                    [
+                        "--no-install eslint --max-warnings 0 --no-warn-ignored "
+                        f"{self.project}/shared/x.ts"
+                    ],
+                )
+
+    def test_a_file_reached_through_an_outside_symlink_to_the_project_is_linted(self):
+        link = self.tmp / "link"
+        link.symlink_to(self.project)
+        self.assert_linted(self.run_hook(link / "mod.ts"))
+
+    def test_a_path_with_spaces_is_linted(self):
+        spaced = self.project / "my dir"
+        spaced.mkdir()
+        self.assert_linted(self.run_hook(spaced / "a b.ts"))
+        self.assertTrue(self.npx_calls()[0].endswith(f"{self.project}/my dir/a b.ts"))
+
+    def test_a_dotdot_path_that_looks_inside_the_root_but_leaves_it_is_skipped(self):
+        (self.tmp / "elsewhere").mkdir()
+        result = self.run_hook(
+            self.project / "src" / ".." / ".." / "elsewhere" / "x.ts", STUB_FINDINGS="1"
+        )
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(self.npx_calls(), [])
+
+    def test_a_root_of_slash_keeps_a_single_slash_in_the_prefix(self):
+        # A test cannot create /package.json, so run the hook's prefix construction directly.
+        script = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("prefix=${root%/}/", script)
+        for root, expected in (("/", "/"), ("/a/b", "/a/b/")):
+            out = subprocess.run(
+                [BASH, "-c", 'root=$1; prefix=${root%/}/; printf %s "$prefix"', "_", root],
+                capture_output=True, text=True, check=True,
+            ).stdout
+            self.assertEqual(out, expected)
 
 
 class HooksJsonTest(unittest.TestCase):

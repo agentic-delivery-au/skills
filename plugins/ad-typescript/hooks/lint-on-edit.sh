@@ -2,7 +2,7 @@
 # PostToolUse hook: report ESLint findings on the script file Claude just edited. Never fixes.
 # Exit 1 is non-blocking and Claude Code shows its stderr; exit 2 feeds the findings back to Claude.
 # Not a Node project: stay silent rather than run npx where nothing set ESLint up. Needs no jq.
-# The root is one absolute physical path (symlinks, a relative path and a trailing slash resolved);
+# The root is resolved to an absolute physical path (symlinks, a relative path and a trailing slash);
 # a root that does not exist is not a project. CDPATH is cleared so cd never searches it.
 orig=$PWD
 root=$(CDPATH= cd -P -- "${CLAUDE_PROJECT_DIR:-$PWD}" 2>/dev/null && pwd -P) || exit 0
@@ -24,18 +24,36 @@ if ! command -v jq >/dev/null 2>&1; then
   echo "ad-typescript lint hook: jq is not on PATH, so ESLint did not check the edited file." >&2
   exit 1
 fi
-# Resolve the edited file physically too: a relative path is read against the directory we started
-# in, then its directory is resolved so `..` and symlinks cannot disguise where it is.
+# A file is in the project when its path as given, made absolute, is under the root as given, or
+# when its physical path is under the physical root. Either way ESLint gets the logical path, so a
+# directory in the project that is a symlink pointing outside it is still linted. A logical path with
+# a `..` segment is not trusted, because the prefix test cannot see where it leads.
 case "$file" in
   /*) ;;
   *) file=$orig/$file ;;
 esac
-dir=$(CDPATH= cd -P -- "$(dirname -- "$file")" 2>/dev/null && pwd -P) || exit 0
-file=$dir/$(basename -- "$file")
-# ESLint 10 errors on a file outside every config, such as a scratch file in /tmp.
-case "$file" in
-  "$root"/*) ;;
-  *) exit 0 ;;
+lroot=${CLAUDE_PROJECT_DIR:-$PWD}
+case "$lroot" in
+  /*) ;;
+  *) lroot=$orig/$lroot ;;
+esac
+while [ "${lroot%/}" != "$lroot" ]; do lroot=${lroot%/}; done
+# The file's directory must exist. ESLint 10 errors on a file outside every config, such as a
+# scratch file in /tmp, so that is skipped.
+dir=${file%/*}
+dir=$(cd -P -- "${dir:-/}" 2>/dev/null && pwd -P) || exit 0
+prefix=${root%/}/
+lprefix=$lroot/
+case "$file/" in
+  */../*) logical= ;;
+  *) logical=1 ;;
+esac
+case "${dir%/}/${file##*/}" in
+  "$prefix"*) ;;
+  *) case "$logical$file" in
+       1"$lprefix"*) ;;
+       *) exit 0 ;;
+     esac ;;
 esac
 if ! command -v npx >/dev/null 2>&1; then
   echo "ad-typescript lint hook: npx is not on PATH, so ESLint did not check the edited file." >&2
