@@ -61,19 +61,28 @@ The hook gives early feedback only; the repo's pre-commit and CI remain the gate
 
 The hook says when it cannot run, and stays out of projects that are not Node projects:
 
-- Only a `package.json` at the project root (`$CLAUDE_PROJECT_DIR`, else the current directory)
-  turns the hook on, and npx runs from that root. Without one it does nothing and exits 0, whatever
-  the file, and needs no `jq`. A monorepo with `package.json` files only in subdirectories gets no
-  lint from this hook, and in one that installs ESLint only in a package, a root `package.json`
-  makes npx report that it cannot find ESLint after each edit.
-- A file outside the project root, such as a scratch file in `/tmp`, is skipped, because ESLint 10
-  would fail it for having no config. A relative path is read against the directory Claude was
-  running in.
+- The project root (`$CLAUDE_PROJECT_DIR`, else the current directory) is resolved once to an
+  absolute physical path, so a relative or trailing-slash `$CLAUDE_PROJECT_DIR` and symlinks in the
+  root or the edited file's path all work. A root that does not exist is not a project. Only a
+  `package.json` at that root turns the hook on, and npx runs from it. Without one it does nothing
+  and exits 0, whatever the file, and needs no `jq`. A monorepo with `package.json` files only in
+  subdirectories gets no lint from this hook, and in one that installs ESLint only in a package, a
+  root `package.json` makes npx report that it cannot find ESLint after each edit.
+- The edited file is resolved the same way: a relative path is read against the directory Claude was
+  running in, then its directory is resolved physically, so `..` and symlinks are followed. A file
+  outside the project root, such as a scratch file in `/tmp`, or in a directory that does not exist,
+  is skipped, because ESLint 10 would fail it for having no config.
 - In a project with a `package.json`, if `jq` is not on your PATH and the edited file is one of the
   extensions above, it prints one line to stderr and exits 1. That is a non-blocking error, which
   Claude Code shows, so a missing `jq` is not mistaken for a clean file. Other files are skipped
   silently.
-- If the project root cannot be entered, it prints one line to stderr and exits 1.
+- In a project with a `package.json`, if `npx` is not on your PATH and the edited file is in the
+  project, it prints one line to stderr and exits 1, so a missing `npx` is not mistaken for a clean
+  file.
+
+The hook has no "could not enter the project root" outcome in practice: it resolves the root by
+entering it, so a root it cannot enter is skipped as not a project. The script keeps a guard on the
+final `cd` that exits 1, but it is unreachable short of the directory changing mid-run.
 
 `--no-warn-ignored` needs flat config: ESLint 9 or later, or ESLint 8.57 or later with an
 `eslint.config.*` file. On an older ESLint, or one using `.eslintrc.*`, ESLint rejects the option,

@@ -26,9 +26,10 @@ exit 1
 """
 
 BASH, JQ = shutil.which("bash"), shutil.which("jq")
+DIRNAME, BASENAME = shutil.which("dirname"), shutil.which("basename")
 
 
-@unittest.skipUnless(BASH and JQ, "needs bash and jq")
+@unittest.skipUnless(BASH and JQ and DIRNAME and BASENAME, "needs bash, jq, dirname and basename")
 class TsLintOnEditTest(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -41,34 +42,39 @@ class TsLintOnEditTest(unittest.TestCase):
         (self.project / "package.json").write_text("{}", encoding="utf-8")
 
     @staticmethod
-    def make_bin(bin_dir, *, with_jq):
-        """A PATH holding only bash, the fake npx, and jq if asked."""
+    def make_bin(bin_dir, *, with_jq, with_npx=True):
+        """A PATH holding only what the hook uses, the fake npx, and jq if asked."""
         bin_dir.mkdir()
-        (bin_dir / "bash").symlink_to(BASH)
+        for name, target in (("bash", BASH), ("dirname", DIRNAME), ("basename", BASENAME)):
+            (bin_dir / name).symlink_to(target)
         if with_jq:
             (bin_dir / "jq").symlink_to(JQ)
-        npx = bin_dir / "npx"
-        npx.write_text(FAKE_NPX, newline="\n", encoding="utf-8")
-        npx.chmod(npx.stat().st_mode | stat.S_IXUSR)
+        if with_npx:
+            npx = bin_dir / "npx"
+            npx.write_text(FAKE_NPX, newline="\n", encoding="utf-8")
+            npx.chmod(npx.stat().st_mode | stat.S_IXUSR)
         return bin_dir
 
     def run_hook(self, file, bin_dir=None, project=None, cwd=None, **env):
         cwd = cwd or self.project
         payload = {"tool_input": {"file_path": str(file)}}
+        environ = {
+            "PATH": str(bin_dir or self.bin),
+            "STUB_LOG": str(self.log),
+            "CLAUDE_PROJECT_DIR": str(self.project if project is None else project),
+            # A shell keeps PWD as the path it was given, so a symlinked TMPDIR stays one.
+            "PWD": str(cwd),
+            **env,
+        }
+        # A value of None leaves the variable unset.
+        environ = {k: v for k, v in environ.items() if v is not None}
         return subprocess.run(
             [BASH, str(SCRIPT)],
             input=json.dumps(payload),
             capture_output=True,
             text=True,
             cwd=cwd,
-            env={
-                "PATH": str(bin_dir or self.bin),
-                "STUB_LOG": str(self.log),
-                "CLAUDE_PROJECT_DIR": str(project or self.project),
-                # A shell keeps PWD as the path it was given, so a symlinked TMPDIR stays one.
-                "PWD": str(cwd),
-                **env,
-            },
+            env=environ,
             timeout=30,
             check=False,
         )
@@ -78,6 +84,9 @@ class TsLintOnEditTest(unittest.TestCase):
 
     def npx_pwd(self):
         return pathlib.Path(self.log.with_name("npx.log.pwd").read_text(encoding="utf-8").strip())
+
+    def no_npx(self):
+        return self.make_bin(self.tmp / "no-npx-bin", with_jq=True, with_npx=False)
 
     def no_jq(self):
         return self.make_bin(self.tmp / "no-jq-bin", with_jq=False)
@@ -112,7 +121,7 @@ class TsLintOnEditTest(unittest.TestCase):
         self.run_hook(self.project / "mod.ts", STUB_FINDINGS="1")
         self.assertEqual(
             self.npx_calls(),
-            [f"--no-install eslint --max-warnings 0 --no-warn-ignored {self.project}/mod.ts"],
+            [f"--no-install eslint --max-warnings 0 --no-warn-ignored {self.project.resolve()}/mod.ts"],
         )
 
     def test_a_missing_jq_exits_1_and_says_so_on_stderr(self):
@@ -165,14 +174,69 @@ class TsLintOnEditTest(unittest.TestCase):
                 arg = self.npx_calls()[0].rsplit(" ", 1)[1]
                 self.assertEqual(pathlib.Path(arg).resolve(), expected.resolve())
 
-    def test_cd_to_the_root_ignores_cdpath(self):
-        sub = self.project / "src"
-        sub.mkdir()
+    def test_resolving_a_relative_root_ignores_cdpath(self):
         decoy = self.tmp / "decoy"
         (decoy / "project").mkdir(parents=True)
-        result = self.run_hook(self.project / "mod.ts", cwd=sub, CDPATH=str(decoy))
+        result = self.run_hook(
+            self.project / "mod.ts", project="project", cwd=self.tmp, CDPATH=str(decoy)
+        )
         self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(len(self.npx_calls()), 1)
         self.assertEqual(self.npx_pwd().resolve(), self.project.resolve())
+
+    def assert_linted(self, result):
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(len(self.npx_calls()), 1)
+
+    def test_a_symlinked_root_with_a_physical_file_path_is_linted(self):
+        link = self.tmp / "link"
+        link.symlink_to(self.project)
+        self.assert_linted(self.run_hook(self.project / "mod.ts", project=link))
+
+    def test_a_physical_root_with_a_file_path_under_a_symlink_is_linted(self):
+        link = self.tmp / "link"
+        link.symlink_to(self.project)
+        self.assert_linted(self.run_hook(link / "mod.ts"))
+
+    def test_a_root_with_a_trailing_slash_is_linted(self):
+        self.assert_linted(self.run_hook(self.project / "mod.ts", project=f"{self.project}/"))
+
+    def test_an_unset_project_dir_means_the_starting_directory(self):
+        self.assert_linted(self.run_hook("mod.ts", project=None, CLAUDE_PROJECT_DIR=None))
+        self.assertEqual(self.npx_pwd().resolve(), self.project.resolve())
+        self.log.unlink()
+        bare = self.tmp / "bare"
+        bare.mkdir()
+        result = self.run_hook("mod.ts", cwd=bare, CLAUDE_PROJECT_DIR=None, STUB_FINDINGS="1")
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(self.npx_calls(), [])
+
+    def test_a_root_that_does_not_exist_is_not_a_project(self):
+        result = self.run_hook("mod.ts", project=self.tmp / "missing", STUB_FINDINGS="1")
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(self.npx_calls(), [])
+
+    def test_a_dotdot_path_that_leaves_the_root_is_skipped(self):
+        elsewhere = self.tmp / "elsewhere"
+        elsewhere.mkdir()
+        for file in (self.project / ".." / "elsewhere" / "x.ts", "../elsewhere/x.ts"):
+            with self.subTest(file=str(file)):
+                result = self.run_hook(file, STUB_FINDINGS="1")
+                self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(self.npx_calls(), [])
+
+    def test_a_file_in_a_directory_that_does_not_exist_is_skipped(self):
+        result = self.run_hook(self.project / "nope" / "x.ts", STUB_FINDINGS="1")
+        self.assertEqual((result.returncode, result.stderr), (0, ""))
+        self.assertEqual(self.npx_calls(), [])
+
+    def test_a_missing_npx_exits_1_and_says_so_on_stderr(self):
+        result = self.run_hook("mod.ts", bin_dir=self.no_npx())
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(
+            result.stderr,
+            "ad-typescript lint hook: npx is not on PATH, so ESLint did not check the edited file.\n",
+        )
 
     def test_a_file_outside_the_project_is_skipped(self):
         elsewhere = self.tmp / "elsewhere"
@@ -183,6 +247,7 @@ class TsLintOnEditTest(unittest.TestCase):
         relative = self.run_hook("scratch.ts", cwd=elsewhere, STUB_FINDINGS="1")
         self.assertEqual((relative.returncode, relative.stderr), (0, ""))
         self.assertEqual(self.npx_calls(), [])
+        (self.project / "src").mkdir()
         inside = self.run_hook(self.project / "src" / "mod.ts", cwd=elsewhere, STUB_FINDINGS="1")
         self.assertEqual(inside.returncode, 2)
         self.assertEqual(len(self.npx_calls()), 1)
