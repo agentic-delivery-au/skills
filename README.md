@@ -28,6 +28,9 @@ picks up skills added since.
   template.
 - **`ad-python`** — Python practices. Holds `python-best-practices`, a pyrefly language server for
   Claude, and a hook that reports ruff findings after each edit.
+- **`ad-typescript`** — TypeScript practices. Holds `typescript-best-practices`, a TypeScript
+  language server for Claude through the official `typescript-lsp` plugin, and a hook that reports
+  ESLint findings after each edit.
 - **`ad-vendor`** — skills written elsewhere, copied in rather than linked because upstream is not
   installable as a plugin. Holds `stop-slop`. Each one keeps its licence and the commit it was taken
   at under `vendor/`, and the files themselves are left exactly as upstream wrote them.
