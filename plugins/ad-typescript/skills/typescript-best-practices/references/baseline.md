@@ -3,15 +3,17 @@
 This is Agentic Delivery's baseline ESLint and TypeScript configuration, taken from
 [`agentic-delivery-au/typescript-simple-template`](https://github.com/agentic-delivery-au/typescript-simple-template),
 for a project to copy. Change the project-specific values to the project's own and leave the rest.
-For a project that is not a Next.js app, those are the Next.js plugin block in `eslint.config.mjs`,
-and in `tsconfig.json` the `paths` alias, `include`, `jsx`, `lib` and `module`, plus three that
-depend on them: `moduleResolution` must pair with `module` (for a Node project, `NodeNext` with
-`NodeNext`; leaving `bundler` beside `NodeNext` fails `tsc`); `noEmit` stays `true` only when the
-build is not `tsc` (for a `tsc` build, replace it with an `outDir`, which TypeScript 6 wants paired
-with an explicit `rootDir`, and keep the `tsbuildinfo` file out of the project root, which `outDir`
-does by itself or `tsBuildInfoFile` does); and the `plugins` entry `{ "name": "next" }`, which names
-a package the project does not install, goes. `verbatimModuleSyntax: true` with `NodeNext` also
-needs `"type": "module"` in `package.json`: a CommonJS package either adds that or sets
+For a project that is not a Next.js app, those are the Next.js plugin block in `eslint.config.mjs`
+together with the top-level `import nextPlugin from "@next/eslint-plugin-next";` (leave the import
+and ESLint cannot load the config once the package is not installed), and in `tsconfig.json` the
+`paths` alias, `include`, `jsx`, `lib` and `module`, plus three that depend on them:
+`moduleResolution` must pair with `module` (for a Node project, `NodeNext` with `NodeNext`; leaving
+`bundler` beside `NodeNext` fails `tsc`); `noEmit` stays `true` only when the build is not `tsc`
+(for a `tsc` build, replace it with an `outDir`, which TypeScript 6 wants paired with an explicit
+`rootDir`, and keep the `tsbuildinfo` file out of the project root, which `outDir` does by itself or
+`tsBuildInfoFile` does); and the `plugins` entry `{ "name": "next" }`, which names a package the
+project does not install, goes. `verbatimModuleSyntax: true` with `NodeNext` also needs
+`"type": "module"` in `package.json`: a CommonJS package either adds that or sets
 `verbatimModuleSyntax` to `false`, or `tsc` rejects every `import` and `export` in it. The
 statements in `SKILL.md` and `patterns.md` about `no-console`, the suppression rules,
 `no-explicit-any` and the `no-unsafe-*` rules, the `_exhaustive` local, `strict` and Prettier are
