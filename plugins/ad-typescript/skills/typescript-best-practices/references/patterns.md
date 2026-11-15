@@ -233,14 +233,15 @@ the one place it can be applied.
 _Does not license:_ branding a value anywhere other than its constructor.
 
 **3. A caught value narrowed to an error shape.** `catch` binds `unknown` under `strict` (which the
-[baseline](baseline.md) sets), and a thrown value can be literally anything, so no amount of
-validation turns it into a real type.
+[baseline](baseline.md) sets), and a thrown value can be literally anything. The cast only names the
+shape to look for; it proves nothing, so check every field you read before you rely on it.
 
 ```ts
 } catch (error) {
   if (axios.isAxiosError(error)) { /* prefer a real guard where one exists */ }
-  const e = error as { response?: { status?: number } } | null | undefined;
-  const status = e?.response?.status;   // asserted type stays nullable; every access optional
+  const e = error as { response?: { status?: unknown } } | null | undefined;
+  const raw = e?.response?.status;   // every access optional, and the field typed unknown
+  const status = typeof raw === "number" ? raw : undefined;
 }
 ```
 
