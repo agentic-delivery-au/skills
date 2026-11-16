@@ -72,11 +72,14 @@ The hook says when it cannot run, and stays out of projects that are not Node pr
   directory Claude was running in, is under the root as given (also made absolute, trailing slashes
   stripped), or its physical path (its directory resolved with symlinks followed, plus its name) is
   under the physical root. So a directory in the project that is a symlink pointing outside it is
-  still linted, and so is a file reached through a symlink to the project. A path with a `..`
-  segment only counts by its physical path. ESLint, which finds its config from the file's
-  directory, is given the in-project path: the path as given when that is under the root, otherwise
-  the physical path. A file in neither case, such as a scratch file in `/tmp`, or in a directory
-  that does not exist, is skipped, because ESLint 10 would fail it for having no config.
+  still linted, and so is a file reached through a symlink to the project. Both paths have `/./`
+  segments and a trailing `/.` collapsed before they are compared. A file path with a `..` segment
+  only counts by its physical path, and so does every file under a root with a `..` segment, so
+  under such a root a directory symlinked outside the project is not linted. ESLint, which finds its
+  config from the file's directory, is given the in-project path: the path as given (dot segments
+  collapsed) when that is under the root, otherwise the physical path. A file in neither case, such
+  as a scratch file in `/tmp`, or in a directory that does not exist, is skipped, because ESLint 10
+  would fail it for having no config.
 - In a project with a `package.json`, if `jq` is not on your PATH and the edited file is one of the
   extensions above, it prints one line to stderr and exits 1. That is a non-blocking error, which
   Claude Code shows, so a missing `jq` is not mistaken for a clean file. Other files are skipped
