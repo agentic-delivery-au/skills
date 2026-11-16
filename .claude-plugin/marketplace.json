@@ -5,6 +5,7 @@
     "email": "hello@agenticdelivery.com.au"
   },
   "description": "Skills for AI-assisted software development, grouped by what you are working on.",
+  "allowCrossMarketplaceDependenciesOn": ["claude-plugins-official"],
   "plugins": [
     {
       "name": "ad-general",
@@ -20,6 +21,11 @@
       "name": "ad-python",
       "source": "./plugins/ad-python",
       "description": "Python practices: a best-practices skill, a pyrefly language server and a ruff hook."
+    },
+    {
+      "name": "ad-typescript",
+      "source": "./plugins/ad-typescript",
+      "description": "TypeScript practices: a best-practices skill, a TypeScript language server and an ESLint hook."
     },
     {
       "name": "ad-vendor",

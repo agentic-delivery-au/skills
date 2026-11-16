@@ -57,6 +57,10 @@ repos:
         args: [check, "plugins/ad-python/skills/"]
         language_version: "1.27.0"
       - id: skill-validator
+        name: validate ad-typescript skills
+        args: [check, "plugins/ad-typescript/skills/"]
+        language_version: "1.27.0"
+      - id: skill-validator
         name: validate ad-vendor skills
         args: [check, "plugins/ad-vendor/skills/"]
         language_version: "1.27.0"
